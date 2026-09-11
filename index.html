@@ -282,6 +282,7 @@ let allProducts = [];
 let allCategories = [];
 let allDoctors = [];
 let allFaqs = [];
+let allTestimonials = [];
 let siteSettings = {
   heroTitle: "People. Health. A Brighter Tomorrow.",
   heroSubtitle: "Med Whole Limited brings you The Weight Reset, Med Whole Aesthetics and Med Whole Medical - doctor-led weight management, beauty with confidence, and quality medical solutions, plus trusted online doctor consultations.",
@@ -314,7 +315,17 @@ function escapeHtml(s){
   if(s===undefined || s===null) return '';
   return String(s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 }
-function saveCart(){ localStorage.setItem('mw_cart', JSON.stringify(cart)); updateCartBadge(); }
+function saveCart(){
+  localStorage.setItem('mw_cart', JSON.stringify(cart));
+  updateCartBadge();
+  if(currentUser){
+    clearTimeout(mwCartSyncTimer);
+    mwCartSyncTimer = setTimeout(()=>{
+      db.collection('users').doc(currentUser.uid).set({cart}, {merge:true}).catch(()=>{});
+    }, 800); // debounced write so rapid qty clicks don't burn through the daily write quota
+  }
+}
+let mwCartSyncTimer = null;
 function updateCartBadge(){
   const count = cart.reduce((s,i)=>s+i.qty,0);
   const b = $('cartBadge');
@@ -375,6 +386,23 @@ auth.onAuthStateChanged(async user=>{
         await db.collection('users').doc(user.uid).set(currentUserData, {merge:true});
       }
       isAdmin = currentUserData.role === 'admin';
+      // Restore/merge the customer's saved cart so returning users find their items still there
+      const serverCart = Array.isArray(currentUserData.cart) ? currentUserData.cart : [];
+      if(serverCart.length){
+        let addedAny = false;
+        serverCart.forEach(si=>{
+          const existing = cart.find(ci=>ci.id===si.id);
+          if(existing){ if(si.qty>existing.qty){ existing.qty = si.qty; addedAny = true; } }
+          else { cart.push(si); addedAny = true; }
+        });
+        if(addedAny){
+          localStorage.setItem('mw_cart', JSON.stringify(cart));
+          updateCartBadge();
+          toast('Welcome back! Your saved cart items are here.');
+        }
+      } else if(cart.length){
+        db.collection('users').doc(user.uid).set({cart}, {merge:true}).catch(()=>{});
+      }
     }catch(err){ currentUserData = {name:user.email,email:user.email,role:'customer'}; isAdmin=false; }
   } else {
     currentUserData = null; isAdmin = false;
@@ -385,6 +413,7 @@ auth.onAuthStateChanged(async user=>{
 function registerUser(name, email, phone, password){
   return auth.createUserWithEmailAndPassword(email, password).then(cred=>{
     const role = (email||'').toLowerCase() === ADMIN_EMAIL.toLowerCase() ? 'admin' : 'customer';
+    if(role==='customer') mwStatIncrement({totalCustomers:1});
     return db.collection('users').doc(cred.user.uid).set({
       name, email, phone, role, createdAt: firebase.firestore.FieldValue.serverTimestamp()
     });
@@ -394,15 +423,39 @@ function loginUser(email, password){ return auth.signInWithEmailAndPassword(emai
 function logoutUser(){ return auth.signOut(); }
 function resetPassword(email){ return auth.sendPasswordResetEmail(email); }
 
-/* ================= DATA LOADERS ================= */
-function loadProducts(){
+/* ================= DATA LOADERS (with local cache for read efficiency) ================= */
+const MW_CACHE_TTL = 10*60*1000; // 10 minutes - static-ish data doesn't need a fresh read every visit
+function cacheGet(key){
+  try{
+    const raw = localStorage.getItem('mw_cache_'+key);
+    if(!raw) return null;
+    const {data, ts} = JSON.parse(raw);
+    if(Date.now()-ts > MW_CACHE_TTL) return null;
+    return data;
+  }catch(e){ return null; }
+}
+function cacheSet(key, data){
+  try{ localStorage.setItem('mw_cache_'+key, JSON.stringify({data, ts:Date.now()})); }catch(e){}
+}
+function cacheClear(key){ localStorage.removeItem('mw_cache_'+key); }
+
+function loadProducts(force){
+  if(!force){
+    const cached = cacheGet('products');
+    if(cached){ allProducts = cached; return Promise.resolve(allProducts); }
+  }
   return db.collection('products').get().then(snap=>{
     allProducts = [];
     snap.forEach(d=> allProducts.push({id:d.id, ...d.data()}));
+    cacheSet('products', allProducts);
     return allProducts;
   });
 }
-function loadCategories(){
+function loadCategories(force){
+  if(!force){
+    const cached = cacheGet('categories');
+    if(cached){ allCategories = cached; return Promise.resolve(allCategories); }
+  }
   return db.collection('categories').get().then(snap=>{
     allCategories = [];
     snap.forEach(d=> allCategories.push({id:d.id, ...d.data()}));
@@ -413,27 +466,55 @@ function loadCategories(){
         {id:'diagnostics', name:'Med Whole Medical', description:'Quality medical and diagnostic solutions for better care.', imageUrl:'https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=600'}
       ];
     }
+    cacheSet('categories', allCategories);
     return allCategories;
   });
 }
-function loadDoctors(){
+function loadDoctors(force){
+  if(!force){
+    const cached = cacheGet('doctors');
+    if(cached){ allDoctors = cached; return Promise.resolve(allDoctors); }
+  }
   return db.collection('doctors').get().then(snap=>{
     allDoctors = [];
     snap.forEach(d=> allDoctors.push({id:d.id, ...d.data()}));
+    cacheSet('doctors', allDoctors);
     return allDoctors;
   });
 }
-function loadFaqs(){
+function loadFaqs(force){
+  if(!force){
+    const cached = cacheGet('faqs');
+    if(cached){ allFaqs = cached; return Promise.resolve(allFaqs); }
+  }
   return db.collection('faqs').get().then(snap=>{
     allFaqs = [];
     snap.forEach(d=> allFaqs.push({id:d.id, ...d.data()}));
     allFaqs.sort((a,b)=>(a.order||0)-(b.order||0));
+    cacheSet('faqs', allFaqs);
     return allFaqs;
   });
 }
-function loadSettings(){
+function loadTestimonials(force){
+  if(!force){
+    const cached = cacheGet('testimonials');
+    if(cached){ allTestimonials = cached; return Promise.resolve(allTestimonials); }
+  }
+  return db.collection('testimonials').get().then(snap=>{
+    allTestimonials = [];
+    snap.forEach(d=> allTestimonials.push({id:d.id, ...d.data()}));
+    allTestimonials.sort((a,b)=>(a.order||0)-(b.order||0));
+    cacheSet('testimonials', allTestimonials);
+    return allTestimonials;
+  });
+}
+function loadSettings(force){
+  if(!force){
+    const cached = cacheGet('settings');
+    if(cached){ siteSettings = {...siteSettings, ...cached}; return Promise.resolve(siteSettings); }
+  }
   return db.collection('settings').doc('site').get().then(doc=>{
-    if(doc.exists) siteSettings = {...siteSettings, ...doc.data()};
+    if(doc.exists){ siteSettings = {...siteSettings, ...doc.data()}; cacheSet('settings', doc.data()); }
     return siteSettings;
   }).catch(()=>siteSettings);
 }
@@ -496,11 +577,7 @@ function renderHome(){
 
     <section>
       <div class="section-title"><h2>What Our Customers Say</h2></div>
-      <div class="grid grid-3">
-        <div class="testi-card"><p>"Ordering was seamless and the delivery was fast. My weight loss journey has never been easier."</p><strong>- Amaka O.</strong></div>
-        <div class="testi-card"><p>"The online consultation saved me a trip to the hospital. Very professional doctors."</p><strong>- Chidi E.</strong></div>
-        <div class="testi-card"><p>"Great quality diagnostic kits and quick support. Highly recommend Med Whole."</p><strong>- Fatima B.</strong></div>
-      </div>
+      <div class="grid grid-3" id="homeTestimonials"></div>
     </section>
 
     <section style="background:#fff;">
@@ -538,6 +615,19 @@ function renderHome(){
   $('homeDoctors').innerHTML = allDoctors.filter(d=>d.active!==false).slice(0,4).map(doctorCardHtml).join('') || `<div class="empty-state">Doctors coming soon.</div>`;
   wireDoctorCards('homeDoctors');
 
+  const testiFallback = [
+    {name:'Amaka O.', text:'Ordering was seamless and the delivery was fast. My weight loss journey has never been easier.', rating:5},
+    {name:'Chidi E.', text:'The online consultation saved me a trip to the hospital. Very professional doctors.', rating:5},
+    {name:'Fatima B.', text:'Great quality diagnostic kits and quick support. Highly recommend Med Whole.', rating:5}
+  ];
+  const testiData = allTestimonials.length ? allTestimonials : testiFallback;
+  $('homeTestimonials').innerHTML = testiData.map(t=>`
+    <div class="testi-card">
+      <div style="margin-bottom:6px;">${starsHtml(t.rating||5,13)}</div>
+      <p>"${escapeHtml(t.text)}"</p>
+      <strong>- ${escapeHtml(t.name)}</strong>
+    </div>`).join('');
+
   $('homeFaqs').innerHTML = allFaqs.length ? allFaqs.map((f,i)=>`
     <div class="faq-item" data-i="${i}">
       <div class="faq-q">${escapeHtml(f.question)} <span>+</span></div>
@@ -548,6 +638,13 @@ function renderHome(){
   });
 }
 
+function starsHtml(avg, size){
+  avg = avg || 0;
+  const full = Math.round(avg);
+  let out = '';
+  for(let i=1;i<=5;i++) out += `<span style="color:${i<=full?'#f5a623':'#d8e0da'};font-size:${size||13}px;line-height:1;">\u2605</span>`;
+  return out;
+}
 function productCardHtml(p){
   const inStock = (p.stockQty===undefined ? true : p.stockQty > 0);
   return `
@@ -556,6 +653,7 @@ function productCardHtml(p){
     <div class="body">
       <span class="cat-tag">${escapeHtml(catName(p.category))}</span>
       <h4>${escapeHtml(p.name)}</h4>
+      ${p.reviewCount ? `<div>${starsHtml(p.avgRating,12)} <span style="font-size:11px;color:var(--muted);">(${p.reviewCount})</span></div>` : ''}
       <div class="price-row">
         <span class="price-now">${money(p.discountPrice || p.price)}</span>
         ${p.discountPrice ? `<span class="price-old">${money(p.price)}</span>` : ''}
@@ -591,6 +689,7 @@ function openProductModal(id){
   const p = allProducts.find(p=>p.id===id);
   if(!p) return;
   const inStock = (p.stockQty===undefined ? true : p.stockQty > 0);
+  let mwSelectedStars = 0;
   const overlay = document.createElement('div');
   overlay.className='modal-overlay';
   overlay.innerHTML = `
@@ -599,6 +698,7 @@ function openProductModal(id){
       <img src="${escapeHtml(p.imageUrl)}" style="border-radius:12px;margin-bottom:12px;" onerror="this.src='https://placehold.co/400x300?text=Product'">
       <span class="cat-tag">${escapeHtml(catName(p.category))}</span>
       <h3 style="margin:6px 0;">${escapeHtml(p.name)}</h3>
+      <div class="mw-rating-summary" style="margin-bottom:6px;">${p.reviewCount ? `${starsHtml(p.avgRating,14)} <span style="font-size:12px;color:var(--muted);">${(p.avgRating||0).toFixed(1)} (${p.reviewCount} review${p.reviewCount===1?'':'s'})</span>` : `<span style="font-size:12px;color:var(--muted);">No reviews yet</span>`}</div>
       <div class="price-row" style="margin-bottom:10px;">
         <span class="price-now" style="font-size:18px;">${money(p.discountPrice||p.price)}</span>
         ${p.discountPrice ? `<span class="price-old">${money(p.price)}</span>` : ''}
@@ -608,13 +708,84 @@ function openProductModal(id){
       <div style="margin-top:14px;">
         <button class="btn btn-primary btn-block" id="addToCartBtn" ${inStock?'':'disabled'}>${inStock?'Add to Cart':'Out of Stock'}</button>
       </div>
+      <div class="mw-reviews" style="margin-top:18px;border-top:1px solid var(--border);padding-top:14px;">
+        <h4 style="font-size:14px;margin-bottom:8px;">Customer Reviews</h4>
+        <div id="mwReviewList"><div class="loading">Loading reviews...</div></div>
+        ${currentUser ? `
+          <form id="mwReviewForm" style="margin-top:12px;">
+            <div class="form-group"><label>Your Rating</label>
+              <div id="mwStarPicker" style="font-size:26px;cursor:pointer;">${[1,2,3,4,5].map(n=>`<span data-star="${n}" style="color:#d8e0da;">\u2605</span>`).join('')}</div>
+            </div>
+            <div class="form-group"><textarea id="mwReviewText" placeholder="Share your experience with this product..." required></textarea></div>
+            <button class="btn btn-sm btn-primary" type="submit">Submit Review</button>
+          </form>` : `<p style="font-size:12px;color:var(--muted);margin-top:10px;">Please log in from "My Account" to leave a review.</p>`}
+      </div>
     </div>`;
   document.body.appendChild(overlay);
+  mwLoadReviews(p.id, overlay);
   overlay.addEventListener('click', e=>{ if(e.target===overlay || e.target.closest('[data-close]')) overlay.remove(); });
   overlay.querySelector('#addToCartBtn')?.addEventListener('click', ()=>{
     addToCart(p, 1);
     overlay.remove();
   });
+  overlay.querySelector('#mwStarPicker')?.addEventListener('click', e=>{
+    const star = e.target.closest('[data-star]');
+    if(!star) return;
+    mwSelectedStars = Number(star.dataset.star);
+    overlay.querySelectorAll('#mwStarPicker [data-star]').forEach(el=>{
+      el.style.color = Number(el.dataset.star) <= mwSelectedStars ? '#f5a623' : '#d8e0da';
+    });
+  });
+  overlay.querySelector('#mwReviewForm')?.addEventListener('submit', async e=>{
+    e.preventDefault();
+    if(!mwSelectedStars){ toast('Please select a star rating'); return; }
+    const comment = overlay.querySelector('#mwReviewText').value.trim();
+    const btn = overlay.querySelector('#mwReviewForm button[type=submit]');
+    btn.disabled = true; btn.textContent = 'Submitting...';
+    try{
+      const reviewRef = db.collection('reviews').doc();
+      const prodRef = db.collection('products').doc(p.id);
+      let newCount, newAvg;
+      await db.runTransaction(async tx=>{
+        const doc = await tx.get(prodRef);
+        const cur = doc.data() || {};
+        const oldCount = cur.reviewCount || 0;
+        const oldAvg = cur.avgRating || 0;
+        newCount = oldCount + 1;
+        newAvg = ((oldAvg*oldCount) + mwSelectedStars) / newCount;
+        tx.set(reviewRef, {productId:p.id, userId:currentUser.uid, userName:currentUserData?.name||'Customer', rating:mwSelectedStars, comment, createdAt: firebase.firestore.FieldValue.serverTimestamp()});
+        tx.update(prodRef, {reviewCount:newCount, avgRating:newAvg});
+      });
+      p.reviewCount = newCount; p.avgRating = newAvg;
+      cacheClear('products');
+      toast('Thanks for your review!');
+      overlay.querySelector('#mwReviewForm').reset();
+      mwSelectedStars = 0;
+      overlay.querySelectorAll('#mwStarPicker [data-star]').forEach(el=> el.style.color='#d8e0da');
+      overlay.querySelector('.mw-rating-summary').innerHTML = `${starsHtml(p.avgRating,14)} <span style="font-size:12px;color:var(--muted);">${p.avgRating.toFixed(1)} (${p.reviewCount} review${p.reviewCount===1?'':'s'})</span>`;
+      mwLoadReviews(p.id, overlay);
+    }catch(err){ toast(err.message); }
+    finally{ btn.disabled=false; btn.textContent='Submit Review'; }
+  });
+}
+async function mwLoadReviews(productId, overlay){
+  const box = overlay.querySelector('#mwReviewList');
+  if(!box) return;
+  try{
+    const snap = await db.collection('reviews').where('productId','==',productId).limit(50).get();
+    let list = []; snap.forEach(d=> list.push({id:d.id, ...d.data()}));
+    list.sort((a,b)=>(b.createdAt?.seconds||0)-(a.createdAt?.seconds||0));
+    box.innerHTML = list.length ? list.map(r=>`
+      <div style="padding:10px 0;border-bottom:1px solid var(--border);">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <strong style="font-size:13px;">${escapeHtml(r.userName||'Customer')}</strong>
+          <span>${starsHtml(r.rating,12)}</span>
+        </div>
+        ${r.comment ? `<p style="font-size:12px;color:var(--muted);margin-top:4px;">${escapeHtml(r.comment)}</p>` : ''}
+      </div>`).join('') : `<p class="empty-state" style="padding:16px 0;">No reviews yet \u2014 be the first!</p>`;
+  }catch(err){
+    box.innerHTML = `<p style="font-size:12px;color:var(--muted);">Reviews unavailable right now.</p>`;
+  }
 }
 function addToCart(p, qty){
   const existing = cart.find(i=>i.id===p.id);
@@ -742,6 +913,7 @@ function renderCheckout(){
     };
     try{
       await db.collection('orders').add(order);
+      mwStatIncrement({totalOrders:1, pendingOrders:1});
       cart = []; saveCart();
       toast('Order placed successfully!');
       navigate('home');
@@ -915,6 +1087,7 @@ function renderBookConsult(preselectDoc){
         type: $('bcType').value, preferredDate: $('bcDate').value, issue: $('bcIssue').value,
         status:'Pending', notes:'', createdAt: firebase.firestore.FieldValue.serverTimestamp()
       });
+      mwStatIncrement({totalConsultations:1, activeConsultations:1});
       toast('Consultation request submitted!');
       navigate('consult-chat', ref.id);
     }catch(err){ toast(err.message); }
@@ -1010,6 +1183,7 @@ function renderAdmin(){
         <button class="tab-btn" data-at="consultations">Consultations</button>
         <button class="tab-btn" data-at="prescriptions">Prescriptions</button>
         <button class="tab-btn" data-at="faqs">FAQs</button>
+        <button class="tab-btn" data-at="testimonials">Testimonials</button>
         <button class="tab-btn" data-at="supportChats">Live Chat</button>
         <button class="tab-btn" data-at="settings">Site Settings</button>
       </div>
@@ -1035,29 +1209,32 @@ async function loadAdminTab(tab){
   if(tab==='consultations') return adminConsultations(c);
   if(tab==='prescriptions') return adminPrescriptions(c);
   if(tab==='faqs') return adminFaqs(c);
+  if(tab==='testimonials') return adminTestimonials(c);
   if(tab==='supportChats') return adminSupportChats(c);
   if(tab==='settings') return adminSettings(c);
 }
 
 /* --- DASHBOARD --- */
+/* --- STATS (single summary doc = 1 read instead of scanning whole collections) --- */
+function mwStatIncrement(deltas){
+  const payload = {};
+  Object.keys(deltas).forEach(k=> payload[k] = firebase.firestore.FieldValue.increment(deltas[k]));
+  db.collection('stats').doc('summary').set(payload, {merge:true}).catch(()=>{});
+}
 async function adminDashboard(c){
-  const [usersSnap, ordersSnap, consultSnap] = await Promise.all([
-    db.collection('users').get(), db.collection('orders').get(), db.collection('consultations').get()
-  ]);
-  let totalCustomers=0, totalOrders=0, pendingOrders=0, revenue=0;
-  ordersSnap.forEach(d=>{ const o=d.data(); totalOrders++; if((o.status||'Pending')==='Pending') pendingOrders++; if(o.status==='Delivered') revenue += (o.total||0); });
-  usersSnap.forEach(d=>{ if((d.data().role||'customer')==='customer') totalCustomers++; });
-  let totalConsult=0, activeConsult=0;
-  consultSnap.forEach(d=>{ totalConsult++; if((d.data().status||'Pending')!=='Completed') activeConsult++; });
+  c.innerHTML = `<div class="loading">Loading...</div>`;
+  const statsDoc = await db.collection('stats').doc('summary').get().catch(()=>null);
+  const s = (statsDoc && statsDoc.exists) ? statsDoc.data() : {};
   c.innerHTML = `<div class="grid grid-4">
-    <div class="stat-card"><div class="val">${totalCustomers}</div><div class="lbl">Total Customers</div></div>
+    <div class="stat-card"><div class="val">${s.totalCustomers||0}</div><div class="lbl">Total Customers</div></div>
     <div class="stat-card"><div class="val">${allProducts.length}</div><div class="lbl">Total Products</div></div>
-    <div class="stat-card"><div class="val">${totalOrders}</div><div class="lbl">Total Orders</div></div>
-    <div class="stat-card"><div class="val">${pendingOrders}</div><div class="lbl">Pending Orders</div></div>
-    <div class="stat-card"><div class="val">${totalConsult}</div><div class="lbl">Total Consultations</div></div>
-    <div class="stat-card"><div class="val">${activeConsult}</div><div class="lbl">Active Consultations</div></div>
-    <div class="stat-card"><div class="val">${money(revenue)}</div><div class="lbl">Revenue (Delivered)</div></div>
-  </div>`;
+    <div class="stat-card"><div class="val">${s.totalOrders||0}</div><div class="lbl">Total Orders</div></div>
+    <div class="stat-card"><div class="val">${s.pendingOrders||0}</div><div class="lbl">Pending Orders</div></div>
+    <div class="stat-card"><div class="val">${s.totalConsultations||0}</div><div class="lbl">Total Consultations</div></div>
+    <div class="stat-card"><div class="val">${s.activeConsultations||0}</div><div class="lbl">Active Consultations</div></div>
+    <div class="stat-card"><div class="val">${money(s.deliveredRevenue||0)}</div><div class="lbl">Revenue (Delivered)</div></div>
+  </div>
+  <p style="font-size:11px;color:var(--muted);margin-top:14px;">Figures update live as orders and consultations change status \u2014 stored in one summary document to keep Firestore reads minimal on the free plan.</p>`;
 }
 
 /* --- PRODUCTS --- */
@@ -1078,7 +1255,7 @@ async function adminProducts(c){
   delegate('adminTabContent','[data-del]','click', async el=>{
     if(!confirm('Delete this product?')) return;
     await db.collection('products').doc(el.closest('tr').dataset.id).delete();
-    toast('Deleted'); adminProducts(c);
+    cacheClear('products'); toast('Deleted'); adminProducts(c);
   });
 }
 function openProductForm(id){
@@ -1128,7 +1305,7 @@ function openProductForm(id){
     try{
       if(id) await db.collection('products').doc(id).update(data);
       else { data.createdAt = firebase.firestore.FieldValue.serverTimestamp(); await db.collection('products').add(data); }
-      toast('Product saved'); overlay.remove(); adminProducts($('adminTabContent'));
+      cacheClear('products'); toast('Product saved'); overlay.remove(); adminProducts($('adminTabContent'));
     }catch(err){ toast(err.message); }
   });
 }
@@ -1150,7 +1327,7 @@ async function adminCategories(c){
   delegate('adminTabContent','[data-del]','click', async el=>{
     if(!confirm('Delete this category?')) return;
     await db.collection('categories').doc(el.closest('tr').dataset.id).delete();
-    toast('Deleted'); adminCategories(c);
+    cacheClear('categories'); toast('Deleted'); adminCategories(c);
   });
 }
 function openCategoryForm(id){
@@ -1174,7 +1351,7 @@ function openCategoryForm(id){
     try{
       if(id) await db.collection('categories').doc(id).update(data);
       else await db.collection('categories').add(data);
-      toast('Category saved'); overlay.remove(); adminCategories($('adminTabContent'));
+      cacheClear('categories'); toast('Category saved'); overlay.remove(); adminCategories($('adminTabContent'));
     }catch(err){ toast(err.message); }
   });
 }
@@ -1197,7 +1374,17 @@ async function adminOrders(c){
       </tr>`).join('') || '<tr><td colspan="5">No orders yet.</td></tr>'}</tbody></table></div>`;
   delegate('adminTabContent','[data-status]','change', async (el)=>{
     const id = el.closest('tr').dataset.id;
-    await db.collection('orders').doc(id).update({status: el.value});
+    const ord = orders.find(o=>o.id===id);
+    const oldStatus = ord?.status || 'Pending';
+    const newStatus = el.value;
+    await db.collection('orders').doc(id).update({status: newStatus});
+    if(ord) ord.status = newStatus;
+    const delta = {};
+    if(oldStatus==='Pending' && newStatus!=='Pending') delta.pendingOrders = -1;
+    if(oldStatus!=='Pending' && newStatus==='Pending') delta.pendingOrders = 1;
+    if(oldStatus!=='Delivered' && newStatus==='Delivered') delta.deliveredRevenue = (ord?.total||0);
+    if(oldStatus==='Delivered' && newStatus!=='Delivered') delta.deliveredRevenue = -(ord?.total||0);
+    if(Object.keys(delta).length) mwStatIncrement(delta);
     toast('Order status updated');
   });
   delegate('adminTabContent','[data-view-order]','click', el=>{
@@ -1241,7 +1428,7 @@ async function adminDoctors(c){
   delegate('adminTabContent','[data-del]','click', async el=>{
     if(!confirm('Delete this doctor?')) return;
     await db.collection('doctors').doc(el.closest('tr').dataset.id).delete();
-    toast('Deleted'); adminDoctors(c);
+    cacheClear('doctors'); toast('Deleted'); adminDoctors(c);
   });
 }
 function openDoctorForm(id){
@@ -1266,7 +1453,7 @@ function openDoctorForm(id){
     try{
       if(id) await db.collection('doctors').doc(id).update(data);
       else await db.collection('doctors').add(data);
-      toast('Doctor saved'); overlay.remove(); adminDoctors($('adminTabContent'));
+      cacheClear('doctors'); toast('Doctor saved'); overlay.remove(); adminDoctors($('adminTabContent'));
     }catch(err){ toast(err.message); }
   });
 }
@@ -1286,7 +1473,14 @@ async function adminConsultations(c){
       </tr>`;
     }).join('') || '<tr><td colspan="5">No consultations yet.</td></tr>'}</tbody></table></div>`;
   delegate('adminTabContent','[data-status]','change', async el=>{
-    await db.collection('consultations').doc(el.closest('tr').dataset.id).update({status: el.value});
+    const id = el.closest('tr').dataset.id;
+    const cn = list.find(c=>c.id===id);
+    const oldStatus = cn?.status || 'Pending';
+    const newStatus = el.value;
+    await db.collection('consultations').doc(id).update({status: newStatus});
+    if(cn) cn.status = newStatus;
+    if(oldStatus!=='Completed' && newStatus==='Completed') mwStatIncrement({activeConsultations:-1});
+    if(oldStatus==='Completed' && newStatus!=='Completed') mwStatIncrement({activeConsultations:1});
     toast('Status updated');
   });
   delegate('adminTabContent','[data-chat]','click', el=> openAdminChat(el.closest('tr').dataset.id));
@@ -1410,7 +1604,7 @@ async function adminFaqs(c){
   delegate('adminTabContent','[data-del]','click', async el=>{
     if(!confirm('Delete this FAQ?')) return;
     await db.collection('faqs').doc(el.closest('tr').dataset.id).delete();
-    toast('Deleted'); adminFaqs(c);
+    cacheClear('faqs'); toast('Deleted'); adminFaqs(c);
   });
 }
 function openFaqForm(id){
@@ -1432,7 +1626,54 @@ function openFaqForm(id){
     try{
       if(id) await db.collection('faqs').doc(id).update(data);
       else await db.collection('faqs').add(data);
-      toast('FAQ saved'); overlay.remove(); adminFaqs($('adminTabContent'));
+      cacheClear('faqs'); toast('FAQ saved'); overlay.remove(); adminFaqs($('adminTabContent'));
+    }catch(err){ toast(err.message); }
+  });
+}
+
+/* --- TESTIMONIALS --- */
+async function adminTestimonials(c){
+  await loadTestimonials();
+  c.innerHTML = `
+    <button class="btn btn-primary btn-sm" id="addTestiBtn" style="margin-bottom:14px;">+ Add Testimonial</button>
+    <div class="table-wrap"><table><thead><tr><th>Name</th><th>Rating</th><th>Text</th><th>Actions</th></tr></thead>
+    <tbody>${allTestimonials.map(t=>`
+      <tr data-id="${t.id}">
+        <td>${escapeHtml(t.name)}</td><td>${starsHtml(t.rating||5,11)}</td>
+        <td style="max-width:220px;white-space:normal;">${escapeHtml(t.text)}</td>
+        <td><button class="btn btn-sm btn-ghost" data-edit>Edit</button> <button class="btn btn-sm btn-danger" data-del>Del</button></td>
+      </tr>`).join('') || '<tr><td colspan="4">No testimonials yet \u2014 the homepage shows default examples until you add real ones.</td></tr>'}</tbody></table></div>`;
+  $('addTestiBtn').addEventListener('click', ()=> openTestimonialForm());
+  delegate('adminTabContent','[data-edit]','click', el=> openTestimonialForm(el.closest('tr').dataset.id));
+  delegate('adminTabContent','[data-del]','click', async el=>{
+    if(!confirm('Delete this testimonial?')) return;
+    await db.collection('testimonials').doc(el.closest('tr').dataset.id).delete();
+    cacheClear('testimonials'); toast('Deleted'); adminTestimonials(c);
+  });
+}
+function openTestimonialForm(id){
+  const t = id ? allTestimonials.find(t=>t.id===id) : {};
+  const overlay = document.createElement('div');
+  overlay.className='modal-overlay';
+  overlay.innerHTML = `<div class="modal-box"><button class="modal-close" data-close>&times;</button>
+    <h3>${id?'Edit':'Add'} Testimonial</h3>
+    <form id="testiForm" style="margin-top:10px;">
+      <div class="form-group"><label>Customer Name</label><input required id="tfName" value="${escapeHtml(t.name||'')}"></div>
+      <div class="form-group"><label>Rating</label>
+        <select id="tfRating">${[5,4,3,2,1].map(n=>`<option value="${n}" ${((t.rating||5)===n)?'selected':''}>${n} star${n===1?'':'s'}</option>`).join('')}</select>
+      </div>
+      <div class="form-group"><label>Testimonial Text</label><textarea required id="tfText">${escapeHtml(t.text||'')}</textarea></div>
+      <button class="btn btn-primary btn-block" type="submit">Save Testimonial</button>
+    </form></div>`;
+  document.body.appendChild(overlay);
+  overlay.addEventListener('click', e=>{ if(e.target===overlay || e.target.closest('[data-close]')) overlay.remove(); });
+  overlay.querySelector('#testiForm').addEventListener('submit', async e=>{
+    e.preventDefault();
+    const data = { name:$('tfName').value, rating:Number($('tfRating').value), text:$('tfText').value, order: id ? (t.order||0) : allTestimonials.length };
+    try{
+      if(id) await db.collection('testimonials').doc(id).update(data);
+      else await db.collection('testimonials').add(data);
+      cacheClear('testimonials'); toast('Testimonial saved'); overlay.remove(); adminTestimonials($('adminTabContent'));
     }catch(err){ toast(err.message); }
   });
 }
@@ -1460,6 +1701,7 @@ async function adminSettings(c){
     try{
       await db.collection('settings').doc('site').set(data, {merge:true});
       siteSettings = {...siteSettings, ...data};
+      cacheClear('settings');
       toast('Settings saved');
     }catch(err){ toast(err.message); }
   });
@@ -1683,7 +1925,7 @@ function openAdminSupportChat(id, list){
 /* ================= INIT ================= */
 async function init(){
   updateCartBadge();
-  await Promise.all([loadProducts(), loadCategories(), loadDoctors(), loadFaqs(), loadSettings()]);
+  await Promise.all([loadProducts(), loadCategories(), loadDoctors(), loadFaqs(), loadTestimonials(), loadSettings()]);
   mwInitWidget();
   navigate('home');
 }
