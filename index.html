@@ -1,0 +1,1412 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VitalCare Health & Wellness</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --primary:#0d9488; --primary-dark:#0f766e; --primary-light:#5eead4;
+  --bg:#f4faf9; --card:#ffffff; --text:#0f2027; --muted:#5b7370;
+  --border:#e2efec; --danger:#e11d48; --warn:#d97706; --ok:#16a34a;
+  --radius:16px; --shadow:0 8px 24px rgba(15,118,110,.08);
+}
+*{box-sizing:border-box; margin:0; padding:0;}
+body{font-family:'Inter',sans-serif; background:var(--bg); color:var(--text); line-height:1.5; padding-bottom:70px;}
+h1,h2,h3,h4{font-family:'Poppins',sans-serif;}
+img{max-width:100%; display:block;}
+a{text-decoration:none; color:inherit;}
+button{font-family:inherit; cursor:pointer; border:none;}
+.hidden{display:none !important;}
+.container{max-width:1200px; margin:0 auto; padding:0 16px;}
+.btn{display:inline-flex; align-items:center; justify-content:center; gap:6px; padding:12px 22px; border-radius:999px; font-weight:600; font-size:14px; transition:.2s;}
+.btn-primary{background:var(--primary); color:#fff;}
+.btn-primary:hover{background:var(--primary-dark);}
+.btn-outline{background:transparent; border:2px solid var(--primary); color:var(--primary);}
+.btn-outline:hover{background:var(--primary); color:#fff;}
+.btn-sm{padding:7px 14px; font-size:12px; border-radius:8px;}
+.btn-danger{background:var(--danger); color:#fff;}
+.btn-block{width:100%;}
+.btn-ghost{background:#eef7f5; color:var(--primary-dark);}
+
+/* NAV */
+header{position:sticky; top:0; z-index:100; background:#fff; box-shadow:0 2px 10px rgba(0,0,0,.05);}
+.navbar{display:flex; align-items:center; justify-content:space-between; padding:14px 16px; max-width:1200px; margin:0 auto;}
+.logo{font-family:'Poppins'; font-weight:800; font-size:20px; color:var(--primary-dark); display:flex; align-items:center; gap:6px;}
+.logo span{color:var(--primary);}
+.nav-icons{display:flex; align-items:center; gap:14px;}
+.icon-btn{position:relative; font-size:20px; background:#eef7f5; width:40px; height:40px; border-radius:50%; display:flex; align-items:center; justify-content:center;}
+.badge{position:absolute; top:-4px; right:-4px; background:var(--danger); color:#fff; font-size:10px; font-weight:700; border-radius:50%; width:18px; height:18px; display:flex; align-items:center; justify-content:center;}
+.menu-toggle{font-size:22px; background:none; display:block;}
+.nav-links{display:none; flex-direction:column; gap:2px; background:#fff; border-top:1px solid var(--border);}
+.nav-links.open{display:flex;}
+.nav-links a{padding:14px 20px; font-weight:600; font-size:14px; color:var(--text); border-bottom:1px solid var(--border);}
+.nav-links a.active{color:var(--primary);}
+
+/* HERO */
+.hero{background:linear-gradient(135deg,#0d9488,#0f766e); color:#fff; padding:50px 16px 60px; text-align:center;}
+.hero h1{font-size:28px; margin-bottom:12px; line-height:1.3;}
+.hero p{font-size:15px; opacity:.92; margin-bottom:24px; max-width:520px; margin-left:auto; margin-right:auto;}
+.hero-btns{display:flex; gap:12px; justify-content:center; flex-wrap:wrap;}
+.hero-btns .btn-outline{border-color:#fff; color:#fff;}
+.hero-btns .btn-outline:hover{background:#fff; color:var(--primary-dark);}
+
+section{padding:40px 16px;}
+.section-title{text-align:center; margin-bottom:28px;}
+.section-title h2{font-size:22px; color:var(--primary-dark); margin-bottom:6px;}
+.section-title p{color:var(--muted); font-size:14px;}
+
+.grid{display:grid; gap:16px;}
+.grid-3{grid-template-columns:repeat(auto-fit,minmax(260px,1fr));}
+.grid-4{grid-template-columns:repeat(auto-fit,minmax(180px,1fr));}
+
+.cat-card{background:var(--card); border-radius:var(--radius); overflow:hidden; box-shadow:var(--shadow); transition:.2s;}
+.cat-card:hover{transform:translateY(-4px);}
+.cat-card img{height:150px; object-fit:cover; width:100%;}
+.cat-card .body{padding:16px;}
+.cat-card h3{font-size:16px; margin-bottom:6px; color:var(--primary-dark);}
+.cat-card p{font-size:13px; color:var(--muted); margin-bottom:12px;}
+
+.card{background:var(--card); border-radius:var(--radius); box-shadow:var(--shadow); padding:18px;}
+.product-card{background:var(--card); border-radius:var(--radius); box-shadow:var(--shadow); overflow:hidden; display:flex; flex-direction:column;}
+.product-card img{height:150px; object-fit:cover; width:100%; background:#eef7f5;}
+.product-card .body{padding:14px; display:flex; flex-direction:column; gap:6px; flex:1;}
+.product-card h4{font-size:14px; color:var(--text);}
+.product-card .cat-tag{font-size:11px; color:var(--primary); font-weight:600; text-transform:uppercase;}
+.price-row{display:flex; align-items:center; gap:8px; margin-top:4px;}
+.price-now{font-weight:700; color:var(--primary-dark); font-size:15px;}
+.price-old{text-decoration:line-through; color:var(--muted); font-size:12px;}
+.stock-tag{font-size:11px; font-weight:600;}
+.stock-in{color:var(--ok);} .stock-out{color:var(--danger);}
+
+.filters{display:flex; gap:10px; flex-wrap:wrap; margin-bottom:20px;}
+.filters input, .filters select{padding:10px 14px; border-radius:10px; border:1px solid var(--border); font-size:13px; flex:1; min-width:140px;}
+.chip{padding:8px 14px; border-radius:999px; background:#eef7f5; color:var(--primary-dark); font-size:13px; font-weight:600; cursor:pointer;}
+.chip.active{background:var(--primary); color:#fff;}
+
+.steps{display:grid; gap:16px; grid-template-columns:repeat(auto-fit,minmax(200px,1fr));}
+.step{text-align:center;}
+.step .num{width:44px; height:44px; border-radius:50%; background:var(--primary); color:#fff; display:flex; align-items:center; justify-content:center; font-weight:700; margin:0 auto 10px;}
+.step h4{font-size:14px; margin-bottom:4px;}
+.step p{font-size:13px; color:var(--muted);}
+
+.doctor-card{background:var(--card); border-radius:var(--radius); box-shadow:var(--shadow); padding:16px; text-align:center;}
+.doctor-card img{width:80px; height:80px; border-radius:50%; object-fit:cover; margin:0 auto 10px; background:#eef7f5;}
+.doctor-card h4{font-size:15px;}
+.doctor-card .spec{color:var(--primary); font-size:12px; font-weight:600; margin-bottom:6px;}
+.doctor-card p{font-size:12px; color:var(--muted); margin-bottom:10px;}
+
+.testi-card{background:var(--card); border-radius:var(--radius); box-shadow:var(--shadow); padding:18px;}
+.testi-card p{font-size:13px; color:var(--muted); margin-bottom:10px; font-style:italic;}
+.testi-card strong{font-size:13px;}
+
+.faq-item{border-bottom:1px solid var(--border); padding:14px 0;}
+.faq-q{font-weight:600; font-size:14px; display:flex; justify-content:space-between; cursor:pointer;}
+.faq-a{font-size:13px; color:var(--muted); margin-top:8px; display:none;}
+.faq-item.open .faq-a{display:block;}
+
+.contact-grid{display:grid; gap:16px; grid-template-columns:repeat(auto-fit,minmax(220px,1fr));}
+.contact-item{background:var(--card); border-radius:var(--radius); box-shadow:var(--shadow); padding:18px; text-align:center;}
+.contact-item .ic{font-size:24px; margin-bottom:8px;}
+
+footer{background:#0f2027; color:#cde7e3; padding:30px 16px; text-align:center; font-size:13px;}
+footer a{color:#5eead4; font-weight:600;}
+
+.form-group{margin-bottom:14px;}
+.form-group label{display:block; font-size:13px; font-weight:600; margin-bottom:6px; color:var(--text);}
+.form-group input, .form-group select, .form-group textarea{width:100%; padding:11px 14px; border-radius:10px; border:1px solid var(--border); font-size:14px; font-family:inherit;}
+.form-group textarea{resize:vertical; min-height:80px;}
+.auth-box{max-width:420px; margin:30px auto; background:var(--card); border-radius:var(--radius); box-shadow:var(--shadow); padding:26px;}
+.auth-box h2{text-align:center; margin-bottom:18px; color:var(--primary-dark);}
+.switch-link{text-align:center; font-size:13px; margin-top:14px; color:var(--muted);}
+.switch-link a{color:var(--primary); font-weight:600;}
+
+.tabs{display:flex; gap:8px; overflow-x:auto; margin-bottom:18px; padding-bottom:4px;}
+.tab-btn{padding:9px 16px; border-radius:999px; background:#eef7f5; font-size:13px; font-weight:600; color:var(--primary-dark); white-space:nowrap;}
+.tab-btn.active{background:var(--primary); color:#fff;}
+
+table{width:100%; border-collapse:collapse; font-size:13px;}
+table th, table td{padding:10px 8px; border-bottom:1px solid var(--border); text-align:left; white-space:nowrap;}
+.table-wrap{overflow-x:auto; background:var(--card); border-radius:var(--radius); box-shadow:var(--shadow); padding:12px;}
+.status-pill{padding:4px 10px; border-radius:999px; font-size:11px; font-weight:700;}
+.st-pending{background:#fef3c7; color:#92400e;} .st-confirmed{background:#dbeafe; color:#1e40af;}
+.st-processing{background:#e0e7ff; color:#3730a3;} .st-shipped{background:#cffafe; color:#155e75;}
+.st-delivered{background:#dcfce7; color:#166534;} .st-cancelled{background:#fee2e2; color:#991b1b;}
+
+.stat-card{background:var(--card); border-radius:var(--radius); box-shadow:var(--shadow); padding:18px; text-align:center;}
+.stat-card .val{font-size:22px; font-weight:800; color:var(--primary-dark);}
+.stat-card .lbl{font-size:12px; color:var(--muted);}
+
+.modal-overlay{position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:1000; display:flex; align-items:flex-end; justify-content:center;}
+.modal-box{background:#fff; width:100%; max-width:520px; max-height:90vh; overflow-y:auto; border-radius:20px 20px 0 0; padding:20px;}
+@media(min-width:640px){.modal-overlay{align-items:center;} .modal-box{border-radius:var(--radius);}}
+.modal-close{float:right; font-size:20px; background:#eef7f5; width:32px; height:32px; border-radius:50%;}
+
+.cart-row{display:flex; gap:12px; align-items:center; padding:12px 0; border-bottom:1px solid var(--border);}
+.cart-row img{width:60px; height:60px; object-fit:cover; border-radius:10px; background:#eef7f5;}
+.qty-ctrl{display:flex; align-items:center; gap:8px;}
+.qty-ctrl button{width:26px; height:26px; border-radius:6px; background:#eef7f5; font-weight:700;}
+.cart-summary{background:var(--card); border-radius:var(--radius); box-shadow:var(--shadow); padding:18px; margin-top:16px;}
+.sum-row{display:flex; justify-content:space-between; font-size:13px; margin-bottom:8px;}
+.sum-row.total{font-weight:800; font-size:16px; border-top:1px solid var(--border); padding-top:8px; margin-top:8px;}
+
+.chat-wrap{display:flex; flex-direction:column; height:65vh; background:var(--card); border-radius:var(--radius); box-shadow:var(--shadow); overflow:hidden;}
+.chat-msgs{flex:1; overflow-y:auto; padding:14px; display:flex; flex-direction:column; gap:10px;}
+.msg{max-width:75%; padding:10px 14px; border-radius:14px; font-size:13px;}
+.msg.me{align-self:flex-end; background:var(--primary); color:#fff; border-bottom-right-radius:4px;}
+.msg.them{align-self:flex-start; background:#eef7f5; color:var(--text); border-bottom-left-radius:4px;}
+.msg img{max-width:150px; border-radius:8px; margin-top:6px;}
+.msg .time{font-size:10px; opacity:.7; margin-top:4px; display:block;}
+.chat-input{display:flex; gap:8px; padding:10px; border-top:1px solid var(--border);}
+.chat-input input[type=text]{flex:1; padding:10px 14px; border-radius:999px; border:1px solid var(--border);}
+.chat-input button{width:40px; height:40px; border-radius:50%; background:var(--primary); color:#fff;}
+.chat-input label{width:40px; height:40px; border-radius:50%; background:#eef7f5; display:flex; align-items:center; justify-content:center; font-size:18px;}
+
+.empty-state{text-align:center; padding:40px 16px; color:var(--muted);}
+.loading{text-align:center; padding:30px; color:var(--muted); font-size:13px;}
+.toast{position:fixed; bottom:20px; left:50%; transform:translateX(-50%); background:#0f2027; color:#fff; padding:12px 20px; border-radius:999px; font-size:13px; z-index:2000; box-shadow:0 6px 20px rgba(0,0,0,.2);}
+.wa-float{position:fixed; bottom:20px; right:16px; background:#25d366; color:#fff; width:52px; height:52px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:26px; box-shadow:0 6px 16px rgba(0,0,0,.25); z-index:500;}
+
+@media(min-width:860px){
+  .menu-toggle{display:none;}
+  .nav-links{display:flex !important; flex-direction:row; background:none; border:none;}
+  .nav-links a{border:none; padding:8px 14px;}
+  .hero h1{font-size:38px;}
+  .hero p{font-size:16px;}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="navbar">
+    <a href="#" class="logo" data-nav="home">Vital<span>Care</span></a>
+    <nav class="nav-links" id="navLinks">
+      <a href="#" data-nav="home">Home</a>
+      <a href="#" data-nav="products">Shop</a>
+      <a href="#" data-nav="doctors">Doctors</a>
+      <a href="#" data-nav="book-consult">Consultation</a>
+      <a href="#" data-nav="account">My Account</a>
+      <a href="#" data-nav="admin" id="adminNavLink" class="hidden">Admin</a>
+    </nav>
+    <div class="nav-icons">
+      <button class="icon-btn" data-nav="cart">🛒<span class="badge hidden" id="cartBadge">0</span></button>
+      <button class="menu-toggle" id="menuToggle">☰</button>
+    </div>
+  </div>
+</header>
+
+<main id="views"></main>
+
+<footer>
+  <p>&copy; <span id="year"></span> VitalCare Health & Wellness. All rights reserved.</p>
+  <p style="margin-top:6px;">Call/WhatsApp: <a href="tel:08056911810">08056911810</a></p>
+</footer>
+
+<a class="wa-float" href="https://wa.me/2348056911810" target="_blank" title="Chat on WhatsApp">💬</a>
+
+<div id="toastHost"></div>
+
+<!-- Firebase Compat SDK -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+
+<script>
+/* ================= FIREBASE INIT ================= */
+const firebaseConfig = {
+  apiKey: "AIzaSyBzbJA3yhnMWn58ir2VyQOhFA0jcNc-MWs",
+  authDomain: "whole-health-451c7.firebaseapp.com",
+  projectId: "whole-health-451c7",
+  storageBucket: "whole-health-451c7.firebasestorage.app",
+  messagingSenderId: "904484886163",
+  appId: "1:904484886163:web:4a4b7cdb2c8202c2339f66"
+};
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.firestore();
+
+/* ================= STATE ================= */
+let currentUser = null;
+let currentUserData = null;
+let isAdmin = false;
+let cart = JSON.parse(localStorage.getItem('vc_cart') || '[]');
+let allProducts = [];
+let allCategories = [];
+let allDoctors = [];
+let allFaqs = [];
+let siteSettings = {
+  heroTitle: "Your Health, Your Priority",
+  heroSubtitle: "Premium weight loss, aesthetics and diagnostics products, plus trusted online doctor consultations - all in one place.",
+  aboutText: "VitalCare connects you with quality health products and licensed doctors for convenient, professional care from anywhere.",
+  contactPhone: "08056911810",
+  contactEmail: "info@vitalcare.com",
+  contactAddress: "Lagos, Nigeria"
+};
+let activeChatConsultationId = null;
+let chatUnsub = null;
+const ADMIN_PIN = "1990";
+const ADMIN_EMAIL = "oladejiridwanopeyemi@gmail.com";
+const DELIVERY_FEE = 1500;
+
+/* ================= HELPERS ================= */
+function $(id){ return document.getElementById(id); }
+function toast(msg){
+  const t = document.createElement('div');
+  t.className='toast'; t.textContent=msg;
+  $('toastHost').appendChild(t);
+  setTimeout(()=>t.remove(), 2800);
+}
+function money(n){ return '₦' + Number(n||0).toLocaleString('en-NG'); }
+function fmtDate(ts){
+  if(!ts) return '-';
+  let d = ts.toDate ? ts.toDate() : new Date(ts);
+  return d.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}) + ' ' + d.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
+}
+function escapeHtml(s){
+  if(s===undefined || s===null) return '';
+  return String(s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function saveCart(){ localStorage.setItem('vc_cart', JSON.stringify(cart)); updateCartBadge(); }
+function updateCartBadge(){
+  const count = cart.reduce((s,i)=>s+i.qty,0);
+  const b = $('cartBadge');
+  if(count>0){ b.textContent=count; b.classList.remove('hidden'); } else { b.classList.add('hidden'); }
+}
+function delegate(containerId, selector, event, handler){
+  const c = $(containerId);
+  if(!c) return;
+  c.addEventListener(event, e=>{
+    const el = e.target.closest(selector);
+    if(el && c.contains(el)) handler(el, e);
+  });
+}
+function compressImage(file, maxW, quality, cb){
+  const reader = new FileReader();
+  reader.onload = function(e){
+    const img = new Image();
+    img.onload = function(){
+      let w = img.width, h = img.height;
+      if(w > maxW){ h = Math.round(h * (maxW/w)); w = maxW; }
+      const canvas = document.createElement('canvas');
+      canvas.width = w; canvas.height = h;
+      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+      cb(canvas.toDataURL('image/jpeg', quality));
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+/* ================= NAV / ROUTER ================= */
+const routes = {};
+function registerRoute(name, renderFn){ routes[name] = renderFn; }
+function navigate(name, param){
+  $('navLinks').classList.remove('open');
+  document.querySelectorAll('.nav-links a').forEach(a=>a.classList.toggle('active', a.dataset.nav===name));
+  window.scrollTo(0,0);
+  if(routes[name]) routes[name](param);
+  else routes['home']();
+}
+document.addEventListener('click', e=>{
+  const nav = e.target.closest('[data-nav]');
+  if(nav){ e.preventDefault(); navigate(nav.dataset.nav); }
+});
+$('menuToggle').addEventListener('click', ()=> $('navLinks').classList.toggle('open'));
+$('year').textContent = new Date().getFullYear();
+
+/* ================= AUTH ================= */
+auth.onAuthStateChanged(async user=>{
+  currentUser = user;
+  if(user){
+    try{
+      const doc = await db.collection('users').doc(user.uid).get();
+      currentUserData = doc.exists ? doc.data() : {name:user.email, email:user.email, phone:'', role:'customer'};
+      const shouldBeAdmin = (user.email||'').toLowerCase() === ADMIN_EMAIL.toLowerCase();
+      if(shouldBeAdmin && currentUserData.role !== 'admin'){
+        currentUserData.role = 'admin';
+        await db.collection('users').doc(user.uid).set(currentUserData, {merge:true});
+      }
+      isAdmin = currentUserData.role === 'admin';
+    }catch(err){ currentUserData = {name:user.email,email:user.email,role:'customer'}; isAdmin=false; }
+  } else {
+    currentUserData = null; isAdmin = false;
+  }
+  $('adminNavLink').classList.toggle('hidden', !isAdmin);
+});
+
+function registerUser(name, email, phone, password){
+  return auth.createUserWithEmailAndPassword(email, password).then(cred=>{
+    const role = (email||'').toLowerCase() === ADMIN_EMAIL.toLowerCase() ? 'admin' : 'customer';
+    return db.collection('users').doc(cred.user.uid).set({
+      name, email, phone, role, createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+  });
+}
+function loginUser(email, password){ return auth.signInWithEmailAndPassword(email, password); }
+function logoutUser(){ return auth.signOut(); }
+function resetPassword(email){ return auth.sendPasswordResetEmail(email); }
+
+/* ================= DATA LOADERS ================= */
+function loadProducts(){
+  return db.collection('products').get().then(snap=>{
+    allProducts = [];
+    snap.forEach(d=> allProducts.push({id:d.id, ...d.data()}));
+    return allProducts;
+  });
+}
+function loadCategories(){
+  return db.collection('categories').get().then(snap=>{
+    allCategories = [];
+    snap.forEach(d=> allCategories.push({id:d.id, ...d.data()}));
+    if(allCategories.length===0){
+      allCategories = [
+        {id:'weight-loss', name:'Weight Loss', description:'Science-backed programs and products to help you reach a healthy weight.', imageUrl:'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=600'},
+        {id:'aesthetics', name:'Aesthetics', description:'Skin, hair and body aesthetics products for a refreshed look.', imageUrl:'https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?w=600'},
+        {id:'diagnostics', name:'Medical Diagnostics', description:'At-home and clinic diagnostic kits for proactive health monitoring.', imageUrl:'https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=600'}
+      ];
+    }
+    return allCategories;
+  });
+}
+function loadDoctors(){
+  return db.collection('doctors').get().then(snap=>{
+    allDoctors = [];
+    snap.forEach(d=> allDoctors.push({id:d.id, ...d.data()}));
+    return allDoctors;
+  });
+}
+function loadFaqs(){
+  return db.collection('faqs').get().then(snap=>{
+    allFaqs = [];
+    snap.forEach(d=> allFaqs.push({id:d.id, ...d.data()}));
+    allFaqs.sort((a,b)=>(a.order||0)-(b.order||0));
+    return allFaqs;
+  });
+}
+function loadSettings(){
+  return db.collection('settings').doc('site').get().then(doc=>{
+    if(doc.exists) siteSettings = {...siteSettings, ...doc.data()};
+    return siteSettings;
+  }).catch(()=>siteSettings);
+}
+
+/* ================= HOME ================= */
+registerRoute('home', renderHome);
+function renderHome(){
+  $('views').innerHTML = `
+    <section class="hero">
+      <h1>${escapeHtml(siteSettings.heroTitle)}</h1>
+      <p>${escapeHtml(siteSettings.heroSubtitle)}</p>
+      <div class="hero-btns">
+        <button class="btn btn-primary" data-nav="products">Shop Products</button>
+        <button class="btn btn-outline" data-nav="book-consult">Book Consultation</button>
+      </div>
+    </section>
+
+    <section>
+      <div class="section-title"><h2>Shop by Category</h2><p>Explore our three core health categories</p></div>
+      <div class="grid grid-3" id="homeCategories"></div>
+    </section>
+
+    <section style="background:#fff;">
+      <div class="section-title"><h2>Featured Products</h2><p>Popular picks from our store</p></div>
+      <div class="grid grid-4" id="homeFeatured"></div>
+    </section>
+
+    <section>
+      <div class="section-title"><h2>How It Works</h2></div>
+      <div class="steps">
+        <div class="step"><div class="num">1</div><h4>Browse or Book</h4><p>Shop products or book a doctor consultation</p></div>
+        <div class="step"><div class="num">2</div><h4>Checkout / Submit</h4><p>Complete your order or consultation request</p></div>
+        <div class="step"><div class="num">3</div><h4>We Confirm</h4><p>Our team confirms and processes it promptly</p></div>
+        <div class="step"><div class="num">4</div><h4>Get Care</h4><p>Receive your products or doctor's guidance</p></div>
+      </div>
+    </section>
+
+    <section style="background:#fff;">
+      <div class="section-title"><h2>Why Choose VitalCare</h2></div>
+      <div class="grid grid-4">
+        <div class="card"><h4>✅ Verified Products</h4><p style="font-size:13px;color:var(--muted);margin-top:6px;">Quality checked wellness products</p></div>
+        <div class="card"><h4>👩‍⚕️ Licensed Doctors</h4><p style="font-size:13px;color:var(--muted);margin-top:6px;">Qualified professionals ready to help</p></div>
+        <div class="card"><h4>🔒 Secure & Private</h4><p style="font-size:13px;color:var(--muted);margin-top:6px;">Your health data is protected</p></div>
+        <div class="card"><h4>🚚 Reliable Delivery</h4><p style="font-size:13px;color:var(--muted);margin-top:6px;">Fast, discreet delivery nationwide</p></div>
+      </div>
+    </section>
+
+    <section>
+      <div class="section-title"><h2>Talk to a Doctor Today</h2><p>Get expert medical advice from the comfort of your home</p></div>
+      <div style="text-align:center;">
+        <button class="btn btn-primary" data-nav="book-consult">Book a Consultation</button>
+      </div>
+    </section>
+
+    <section style="background:#fff;">
+      <div class="section-title"><h2>Our Doctors</h2></div>
+      <div class="grid grid-4" id="homeDoctors"></div>
+    </section>
+
+    <section>
+      <div class="section-title"><h2>What Our Customers Say</h2></div>
+      <div class="grid grid-3">
+        <div class="testi-card"><p>"Ordering was seamless and the delivery was fast. My weight loss journey has never been easier."</p><strong>- Amaka O.</strong></div>
+        <div class="testi-card"><p>"The online consultation saved me a trip to the hospital. Very professional doctors."</p><strong>- Chidi E.</strong></div>
+        <div class="testi-card"><p>"Great quality diagnostic kits and quick support. Highly recommend VitalCare."</p><strong>- Fatima B.</strong></div>
+      </div>
+    </section>
+
+    <section style="background:#fff;">
+      <div class="section-title"><h2>Frequently Asked Questions</h2></div>
+      <div id="homeFaqs" style="max-width:700px;margin:0 auto;"></div>
+    </section>
+
+    <section>
+      <div class="section-title"><h2>Contact Us</h2><p>${escapeHtml(siteSettings.aboutText)}</p></div>
+      <div class="contact-grid">
+        <div class="contact-item"><div class="ic">📞</div><p>Call Us</p><a href="tel:${escapeHtml(siteSettings.contactPhone)}" class="btn btn-sm btn-primary" style="margin-top:8px;">${escapeHtml(siteSettings.contactPhone)}</a></div>
+        <div class="contact-item"><div class="ic">💬</div><p>WhatsApp</p><a href="https://wa.me/234${escapeHtml(siteSettings.contactPhone).replace(/^0/,'')}" target="_blank" class="btn btn-sm btn-primary" style="margin-top:8px;">Chat Now</a></div>
+        <div class="contact-item"><div class="ic">✉️</div><p>Email</p><p style="font-size:13px;margin-top:8px;">${escapeHtml(siteSettings.contactEmail)}</p></div>
+        <div class="contact-item"><div class="ic">📍</div><p>Location</p><p style="font-size:13px;margin-top:8px;">${escapeHtml(siteSettings.contactAddress)}</p></div>
+      </div>
+    </section>
+  `;
+
+  const cc = $('homeCategories');
+  cc.innerHTML = allCategories.map(c=>`
+    <div class="cat-card">
+      <img src="${escapeHtml(c.imageUrl)}" onerror="this.src='https://placehold.co/600x300?text=VitalCare'">
+      <div class="body">
+        <h3>${escapeHtml(c.name)}</h3>
+        <p>${escapeHtml(c.description||'')}</p>
+        <button class="btn btn-sm btn-ghost" data-cat="${escapeHtml(c.id)}">Browse Products</button>
+      </div>
+    </div>`).join('');
+  cc.querySelectorAll('[data-cat]').forEach(b=> b.addEventListener('click', ()=> navigate('products', b.dataset.cat)));
+
+  const featured = allProducts.filter(p=>p.featured).slice(0,8);
+  $('homeFeatured').innerHTML = featured.length ? featured.map(productCardHtml).join('') : `<div class="empty-state">No featured products yet.</div>`;
+  wireProductCards('homeFeatured');
+
+  $('homeDoctors').innerHTML = allDoctors.filter(d=>d.active!==false).slice(0,4).map(doctorCardHtml).join('') || `<div class="empty-state">Doctors coming soon.</div>`;
+  wireDoctorCards('homeDoctors');
+
+  $('homeFaqs').innerHTML = allFaqs.length ? allFaqs.map((f,i)=>`
+    <div class="faq-item" data-i="${i}">
+      <div class="faq-q">${escapeHtml(f.question)} <span>+</span></div>
+      <div class="faq-a">${escapeHtml(f.answer)}</div>
+    </div>`).join('') : `<p class="empty-state">FAQs coming soon.</p>`;
+  $('homeFaqs').querySelectorAll('.faq-item').forEach(item=>{
+    item.querySelector('.faq-q').addEventListener('click', ()=> item.classList.toggle('open'));
+  });
+}
+
+function productCardHtml(p){
+  const inStock = (p.stockQty===undefined ? true : p.stockQty > 0);
+  return `
+  <div class="product-card" data-view-product="${p.id}">
+    <img src="${escapeHtml(p.imageUrl)}" onerror="this.src='https://placehold.co/400x300?text=Product'">
+    <div class="body">
+      <span class="cat-tag">${escapeHtml(catName(p.category))}</span>
+      <h4>${escapeHtml(p.name)}</h4>
+      <div class="price-row">
+        <span class="price-now">${money(p.discountPrice || p.price)}</span>
+        ${p.discountPrice ? `<span class="price-old">${money(p.price)}</span>` : ''}
+      </div>
+      <span class="stock-tag ${inStock?'stock-in':'stock-out'}">${inStock?'In Stock':'Out of Stock'}</span>
+      <button class="btn btn-sm btn-primary btn-block" data-view-product="${p.id}" style="margin-top:6px;">View Product</button>
+    </div>
+  </div>`;
+}
+function catName(id){
+  const c = allCategories.find(c=>c.id===id);
+  return c ? c.name : (id||'Product');
+}
+function wireProductCards(containerId){
+  delegate(containerId, '[data-view-product]', 'click', el=> openProductModal(el.dataset.viewProduct));
+}
+function doctorCardHtml(d){
+  return `
+  <div class="doctor-card">
+    <img src="${escapeHtml(d.imageUrl||'')}" onerror="this.src='https://placehold.co/150x150?text=Dr'">
+    <h4>${escapeHtml(d.name)}</h4>
+    <div class="spec">${escapeHtml(d.specialty||'')}</div>
+    <p>${escapeHtml((d.description||'').slice(0,70))}</p>
+    <button class="btn btn-sm btn-primary" data-book-doc="${d.id}">Book Consultation</button>
+  </div>`;
+}
+function wireDoctorCards(containerId){
+  delegate(containerId, '[data-book-doc]', 'click', el=> navigate('book-consult', el.dataset.bookDoc));
+}
+
+/* ================= PRODUCT MODAL ================= */
+function openProductModal(id){
+  const p = allProducts.find(p=>p.id===id);
+  if(!p) return;
+  const inStock = (p.stockQty===undefined ? true : p.stockQty > 0);
+  const overlay = document.createElement('div');
+  overlay.className='modal-overlay';
+  overlay.innerHTML = `
+    <div class="modal-box">
+      <button class="modal-close" data-close>&times;</button>
+      <img src="${escapeHtml(p.imageUrl)}" style="border-radius:12px;margin-bottom:12px;" onerror="this.src='https://placehold.co/400x300?text=Product'">
+      <span class="cat-tag">${escapeHtml(catName(p.category))}</span>
+      <h3 style="margin:6px 0;">${escapeHtml(p.name)}</h3>
+      <div class="price-row" style="margin-bottom:10px;">
+        <span class="price-now" style="font-size:18px;">${money(p.discountPrice||p.price)}</span>
+        ${p.discountPrice ? `<span class="price-old">${money(p.price)}</span>` : ''}
+      </div>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:14px;">${escapeHtml(p.description||'')}</p>
+      <span class="stock-tag ${inStock?'stock-in':'stock-out'}">${inStock?'In Stock':'Out of Stock'}</span>
+      <div style="margin-top:14px;">
+        <button class="btn btn-primary btn-block" id="addToCartBtn" ${inStock?'':'disabled'}>${inStock?'Add to Cart':'Out of Stock'}</button>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+  overlay.addEventListener('click', e=>{ if(e.target===overlay || e.target.closest('[data-close]')) overlay.remove(); });
+  overlay.querySelector('#addToCartBtn')?.addEventListener('click', ()=>{
+    addToCart(p, 1);
+    overlay.remove();
+  });
+}
+function addToCart(p, qty){
+  const existing = cart.find(i=>i.id===p.id);
+  if(existing) existing.qty += qty;
+  else cart.push({id:p.id, name:p.name, price:p.discountPrice||p.price, imageUrl:p.imageUrl, qty});
+  saveCart();
+  toast('Added to cart');
+}
+
+/* ================= PRODUCTS PAGE ================= */
+registerRoute('products', renderProducts);
+let productFilterCat = null;
+let productSearch = '';
+function renderProducts(cat){
+  if(cat!==undefined) productFilterCat = cat;
+  $('views').innerHTML = `
+    <section>
+      <div class="section-title"><h2>Shop Products</h2></div>
+      <div class="filters">
+        <input type="text" id="prodSearch" placeholder="Search products..." value="${escapeHtml(productSearch)}">
+      </div>
+      <div class="filters" id="catChips"></div>
+      <div class="grid grid-4" id="prodGrid"></div>
+    </section>`;
+  $('catChips').innerHTML = `<span class="chip ${!productFilterCat?'active':''}" data-c="">All</span>` +
+    allCategories.map(c=>`<span class="chip ${productFilterCat===c.id?'active':''}" data-c="${c.id}">${escapeHtml(c.name)}</span>`).join('');
+  $('catChips').querySelectorAll('.chip').forEach(chip=> chip.addEventListener('click', ()=>{
+    productFilterCat = chip.dataset.c || null;
+    renderProducts();
+  }));
+  $('prodSearch').addEventListener('input', e=>{ productSearch = e.target.value; renderProductGrid(); });
+  renderProductGrid();
+}
+function renderProductGrid(){
+  let list = allProducts;
+  if(productFilterCat) list = list.filter(p=>p.category===productFilterCat);
+  if(productSearch.trim()) list = list.filter(p=> (p.name||'').toLowerCase().includes(productSearch.toLowerCase()));
+  $('prodGrid').innerHTML = list.length ? list.map(productCardHtml).join('') : `<div class="empty-state">No products found.</div>`;
+  wireProductCards('prodGrid');
+}
+
+/* ================= DOCTORS PAGE ================= */
+registerRoute('doctors', renderDoctors);
+function renderDoctors(){
+  $('views').innerHTML = `
+    <section>
+      <div class="section-title"><h2>Our Doctors</h2><p>Choose a doctor to begin your consultation</p></div>
+      <div class="grid grid-4" id="doctorsGrid"></div>
+    </section>`;
+  const list = allDoctors.filter(d=>d.active!==false);
+  $('doctorsGrid').innerHTML = list.length ? list.map(doctorCardHtml).join('') : `<div class="empty-state">No doctors available yet.</div>`;
+  wireDoctorCards('doctorsGrid');
+}
+
+/* ================= CART PAGE ================= */
+registerRoute('cart', renderCart);
+function renderCart(){
+  const subtotal = cart.reduce((s,i)=>s+i.price*i.qty,0);
+  $('views').innerHTML = `
+    <section>
+      <div class="section-title"><h2>Your Cart</h2></div>
+      <div id="cartList"></div>
+      ${cart.length ? `
+      <div class="cart-summary">
+        <div class="sum-row"><span>Subtotal</span><span>${money(subtotal)}</span></div>
+        <div class="sum-row"><span>Delivery Fee</span><span>${money(DELIVERY_FEE)}</span></div>
+        <div class="sum-row total"><span>Total</span><span>${money(subtotal+DELIVERY_FEE)}</span></div>
+        <button class="btn btn-primary btn-block" data-nav="checkout" style="margin-top:10px;">Proceed to Checkout</button>
+      </div>` : ''}
+    </section>`;
+  $('cartList').innerHTML = cart.length ? cart.map(i=>`
+    <div class="cart-row" data-id="${i.id}">
+      <img src="${escapeHtml(i.imageUrl)}" onerror="this.src='https://placehold.co/100?text=Item'">
+      <div style="flex:1;">
+        <h4 style="font-size:14px;">${escapeHtml(i.name)}</h4>
+        <div style="font-size:13px;color:var(--primary-dark);font-weight:700;">${money(i.price)}</div>
+        <div class="qty-ctrl" style="margin-top:6px;">
+          <button data-dec>-</button><span>${i.qty}</span><button data-inc>+</button>
+          <button class="btn-sm btn-ghost" data-remove style="margin-left:10px;">Remove</button>
+        </div>
+      </div>
+    </div>`).join('') : `<div class="empty-state">Your cart is empty. <br><button class="btn btn-primary" data-nav="products" style="margin-top:12px;">Shop Now</button></div>`;
+
+  delegate('cartList','[data-inc]','click', el=>{ const id=el.closest('[data-id]').dataset.id; cart.find(i=>i.id===id).qty++; saveCart(); renderCart(); });
+  delegate('cartList','[data-dec]','click', el=>{ const id=el.closest('[data-id]').dataset.id; const item=cart.find(i=>i.id===id); item.qty--; if(item.qty<=0) cart=cart.filter(i=>i.id!==id); saveCart(); renderCart(); });
+  delegate('cartList','[data-remove]','click', el=>{ const id=el.closest('[data-id]').dataset.id; cart=cart.filter(i=>i.id!==id); saveCart(); renderCart(); });
+}
+
+/* ================= CHECKOUT ================= */
+registerRoute('checkout', renderCheckout);
+function renderCheckout(){
+  if(!cart.length){ navigate('cart'); return; }
+  const subtotal = cart.reduce((s,i)=>s+i.price*i.qty,0);
+  $('views').innerHTML = `
+    <section>
+      <div class="section-title"><h2>Checkout</h2></div>
+      <div class="card" style="max-width:520px;margin:0 auto;">
+        <form id="checkoutForm">
+          <div class="form-group"><label>Full Name</label><input required id="ckName" value="${escapeHtml(currentUserData?.name||'')}"></div>
+          <div class="form-group"><label>Phone Number</label><input required id="ckPhone" value="${escapeHtml(currentUserData?.phone||'')}"></div>
+          <div class="form-group"><label>Email</label><input required type="email" id="ckEmail" value="${escapeHtml(currentUserData?.email||'')}"></div>
+          <div class="form-group"><label>Delivery Address</label><textarea required id="ckAddress"></textarea></div>
+          <div class="form-group"><label>City</label><input required id="ckCity"></div>
+          <div class="form-group"><label>State</label><input required id="ckState"></div>
+          <div class="cart-summary" style="padding:0;box-shadow:none;">
+            <div class="sum-row"><span>Subtotal</span><span>${money(subtotal)}</span></div>
+            <div class="sum-row"><span>Delivery Fee</span><span>${money(DELIVERY_FEE)}</span></div>
+            <div class="sum-row total"><span>Total</span><span>${money(subtotal+DELIVERY_FEE)}</span></div>
+          </div>
+          <p style="font-size:12px;color:var(--muted);margin:10px 0;">Payment is confirmed manually by our team after order placement. Our team will contact you for payment instructions.</p>
+          <button class="btn btn-primary btn-block" type="submit">Place Order</button>
+        </form>
+      </div>
+    </section>`;
+  $('checkoutForm').addEventListener('submit', async e=>{
+    e.preventDefault();
+    const subtotal = cart.reduce((s,i)=>s+i.price*i.qty,0);
+    const order = {
+      userId: currentUser ? currentUser.uid : null,
+      customerName: $('ckName').value, phone: $('ckPhone').value, email: $('ckEmail').value,
+      address: $('ckAddress').value, city: $('ckCity').value, state: $('ckState').value,
+      items: cart.map(i=>({id:i.id, name:i.name, price:i.price, qty:i.qty})),
+      subtotal, deliveryFee: DELIVERY_FEE, total: subtotal+DELIVERY_FEE,
+      status:'Pending', createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    };
+    try{
+      await db.collection('orders').add(order);
+      cart = []; saveCart();
+      toast('Order placed successfully!');
+      navigate('home');
+    }catch(err){ toast('Error placing order: '+err.message); }
+  });
+}
+
+/* ================= AUTH PAGES ================= */
+registerRoute('login', renderLogin);
+function renderLogin(){
+  $('views').innerHTML = `
+    <div class="auth-box">
+      <h2>Login</h2>
+      <form id="loginForm">
+        <div class="form-group"><label>Email</label><input required type="email" id="loginEmail"></div>
+        <div class="form-group"><label>Password</label><input required type="password" id="loginPassword"></div>
+        <button class="btn btn-primary btn-block" type="submit">Login</button>
+      </form>
+      <p class="switch-link"><a href="#" id="forgotBtn">Forgot password?</a></p>
+      <p class="switch-link">Don't have an account? <a href="#" data-nav="register">Register</a></p>
+    </div>`;
+  $('loginForm').addEventListener('submit', async e=>{
+    e.preventDefault();
+    try{
+      await loginUser($('loginEmail').value, $('loginPassword').value);
+      toast('Welcome back!');
+      navigate('account');
+    }catch(err){ toast(err.message); }
+  });
+  $('forgotBtn').addEventListener('click', async e=>{
+    e.preventDefault();
+    const email = $('loginEmail').value;
+    if(!email){ toast('Enter your email first'); return; }
+    try{ await resetPassword(email); toast('Password reset email sent'); }
+    catch(err){ toast(err.message); }
+  });
+}
+registerRoute('register', renderRegister);
+function renderRegister(){
+  $('views').innerHTML = `
+    <div class="auth-box">
+      <h2>Create Account</h2>
+      <form id="regForm">
+        <div class="form-group"><label>Full Name</label><input required id="regName"></div>
+        <div class="form-group"><label>Email</label><input required type="email" id="regEmail"></div>
+        <div class="form-group"><label>Phone</label><input required id="regPhone"></div>
+        <div class="form-group"><label>Password</label><input required type="password" minlength="6" id="regPassword"></div>
+        <button class="btn btn-primary btn-block" type="submit">Register</button>
+      </form>
+      <p class="switch-link">Already have an account? <a href="#" data-nav="login">Login</a></p>
+    </div>`;
+  $('regForm').addEventListener('submit', async e=>{
+    e.preventDefault();
+    try{
+      await registerUser($('regName').value, $('regEmail').value, $('regPhone').value, $('regPassword').value);
+      toast('Account created!');
+      navigate('account');
+    }catch(err){ toast(err.message); }
+  });
+}
+
+/* ================= ACCOUNT PAGE ================= */
+registerRoute('account', renderAccount);
+function renderAccount(){
+  if(!currentUser){ navigate('login'); return; }
+  $('views').innerHTML = `
+    <section>
+      <div class="section-title"><h2>My Account</h2><p>${escapeHtml(currentUserData?.name||'')}</p></div>
+      <div class="tabs">
+        <button class="tab-btn active" data-t="profile">Profile</button>
+        <button class="tab-btn" data-t="orders">My Orders</button>
+        <button class="tab-btn" data-t="consultations">Consultations</button>
+        <button class="tab-btn" data-t="prescriptions">Prescriptions</button>
+      </div>
+      <div id="accTabContent"></div>
+      <button class="btn btn-outline btn-block" id="logoutBtn" style="margin-top:20px;">Logout</button>
+    </section>`;
+  $('logoutBtn').addEventListener('click', async ()=>{ await logoutUser(); toast('Logged out'); navigate('home'); });
+  $('views').querySelectorAll('.tab-btn').forEach(b=> b.addEventListener('click', ()=>{
+    $('views').querySelectorAll('.tab-btn').forEach(x=>x.classList.remove('active'));
+    b.classList.add('active');
+    loadAccountTab(b.dataset.t);
+  }));
+  loadAccountTab('profile');
+}
+async function loadAccountTab(tab){
+  const c = $('accTabContent');
+  c.innerHTML = `<div class="loading">Loading...</div>`;
+  if(tab==='profile'){
+    c.innerHTML = `
+      <div class="card">
+        <form id="profileForm">
+          <div class="form-group"><label>Full Name</label><input id="pfName" value="${escapeHtml(currentUserData?.name||'')}"></div>
+          <div class="form-group"><label>Phone</label><input id="pfPhone" value="${escapeHtml(currentUserData?.phone||'')}"></div>
+          <div class="form-group"><label>Email</label><input disabled value="${escapeHtml(currentUserData?.email||'')}"></div>
+          <button class="btn btn-primary btn-block" type="submit">Save Changes</button>
+        </form>
+      </div>`;
+    $('profileForm').addEventListener('submit', async e=>{
+      e.preventDefault();
+      await db.collection('users').doc(currentUser.uid).update({name:$('pfName').value, phone:$('pfPhone').value});
+      currentUserData.name = $('pfName').value; currentUserData.phone = $('pfPhone').value;
+      toast('Profile updated');
+    });
+  } else if(tab==='orders'){
+    const snap = await db.collection('orders').where('userId','==',currentUser.uid).get();
+    let orders = []; snap.forEach(d=>orders.push({id:d.id,...d.data()}));
+    orders.sort((a,b)=>(b.createdAt?.seconds||0)-(a.createdAt?.seconds||0));
+    c.innerHTML = orders.length ? orders.map(o=>`
+      <div class="card" style="margin-bottom:12px;">
+        <div style="display:flex;justify-content:space-between;"><strong>${money(o.total)}</strong><span class="status-pill st-${(o.status||'pending').toLowerCase()}">${escapeHtml(o.status||'Pending')}</span></div>
+        <p style="font-size:12px;color:var(--muted);margin:6px 0;">${fmtDate(o.createdAt)}</p>
+        <p style="font-size:12px;">${o.items.map(i=>escapeHtml(i.name)+' x'+i.qty).join(', ')}</p>
+      </div>`).join('') : `<div class="empty-state">No orders yet.</div>`;
+  } else if(tab==='consultations'){
+    const snap = await db.collection('consultations').where('userId','==',currentUser.uid).get();
+    let list = []; snap.forEach(d=>list.push({id:d.id,...d.data()}));
+    list.sort((a,b)=>(b.createdAt?.seconds||0)-(a.createdAt?.seconds||0));
+    c.innerHTML = list.length ? list.map(cn=>{
+      const doc = allDoctors.find(d=>d.id===cn.doctorId);
+      return `<div class="card" style="margin-bottom:12px;">
+        <div style="display:flex;justify-content:space-between;"><strong>${escapeHtml(doc?doc.name:'Doctor')}</strong><span class="status-pill st-${(cn.status||'pending').toLowerCase()}">${escapeHtml(cn.status||'Pending')}</span></div>
+        <p style="font-size:12px;color:var(--muted);margin:6px 0;">${escapeHtml(cn.type)} - ${fmtDate(cn.createdAt)}</p>
+        <button class="btn btn-sm btn-primary" data-open-chat="${cn.id}">Open Chat</button>
+      </div>`;
+    }).join('') : `<div class="empty-state">No consultations yet.</div>`;
+    delegate('accTabContent','[data-open-chat]','click', el=> navigate('consult-chat', el.dataset.openChat));
+  } else if(tab==='prescriptions'){
+    const snap = await db.collection('prescriptions').where('userId','==',currentUser.uid).get();
+    let list = []; snap.forEach(d=>list.push({id:d.id,...d.data()}));
+    list.sort((a,b)=>(b.date?.seconds||0)-(a.date?.seconds||0));
+    c.innerHTML = list.length ? list.map(pr=>`
+      <div class="card" style="margin-bottom:12px;">
+        <strong>Prescription - ${fmtDate(pr.date)}</strong>
+        <p style="font-size:12px;color:var(--muted);margin:6px 0;">Doctor: ${escapeHtml((allDoctors.find(d=>d.id===pr.doctorId)||{}).name||'')}</p>
+        ${(pr.items||[]).map(it=>`<div style="font-size:12px;border-top:1px solid var(--border);padding:6px 0;">
+          <strong>${escapeHtml(it.name)}</strong> - ${escapeHtml(it.dosage)}, ${escapeHtml(it.frequency)}, ${escapeHtml(it.duration)}<br>
+          <span style="color:var(--muted);">${escapeHtml(it.instructions||'')}</span>
+        </div>`).join('')}
+      </div>`).join('') : `<div class="empty-state">No prescriptions yet.</div>`;
+  }
+}
+
+/* ================= BOOK CONSULTATION ================= */
+registerRoute('book-consult', renderBookConsult);
+function renderBookConsult(preselectDoc){
+  if(!currentUser){ toast('Please login to book a consultation'); navigate('login'); return; }
+  $('views').innerHTML = `
+    <section>
+      <div class="section-title"><h2>Book a Consultation</h2></div>
+      <div class="card" style="max-width:520px;margin:0 auto;">
+        <form id="bookForm">
+          <div class="form-group"><label>Select Doctor</label>
+            <select id="bcDoctor" required>${allDoctors.filter(d=>d.active!==false).map(d=>`<option value="${d.id}" ${preselectDoc===d.id?'selected':''}>${escapeHtml(d.name)} - ${escapeHtml(d.specialty||'')}</option>`).join('')}</select>
+          </div>
+          <div class="form-group"><label>Consultation Type</label>
+            <select id="bcType" required><option value="Chat">Chat</option><option value="Voice">Voice Consultation</option><option value="Image">Image Consultation</option></select>
+          </div>
+          <div class="form-group"><label>Preferred Date/Time</label><input type="datetime-local" id="bcDate" required></div>
+          <div class="form-group"><label>Describe Your Issue</label><textarea id="bcIssue" required placeholder="Briefly explain your health concern..."></textarea></div>
+          <button class="btn btn-primary btn-block" type="submit">Submit Request</button>
+        </form>
+      </div>
+    </section>`;
+  $('bookForm').addEventListener('submit', async e=>{
+    e.preventDefault();
+    if(!allDoctors.length){ toast('No doctors available'); return; }
+    try{
+      const ref = await db.collection('consultations').add({
+        userId: currentUser.uid, patientName: currentUserData?.name||'', doctorId: $('bcDoctor').value,
+        type: $('bcType').value, preferredDate: $('bcDate').value, issue: $('bcIssue').value,
+        status:'Pending', notes:'', createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+      toast('Consultation request submitted!');
+      navigate('consult-chat', ref.id);
+    }catch(err){ toast(err.message); }
+  });
+}
+
+/* ================= CONSULTATION CHAT ================= */
+registerRoute('consult-chat', renderConsultChat);
+function renderConsultChat(consultId){
+  if(!currentUser){ navigate('login'); return; }
+  activeChatConsultationId = consultId;
+  $('views').innerHTML = `
+    <section>
+      <div class="section-title"><h2>Consultation Chat</h2></div>
+      <div class="chat-wrap">
+        <div class="chat-msgs" id="chatMsgs"><div class="loading">Loading messages...</div></div>
+        <div class="chat-input">
+          <label for="chatImgInput">📎<input type="file" id="chatImgInput" accept="image/*" class="hidden"></label>
+          <input type="text" id="chatText" placeholder="Type a message...">
+          <button id="chatSendBtn">➤</button>
+        </div>
+      </div>
+    </section>`;
+  if(chatUnsub) chatUnsub();
+  chatUnsub = db.collection('messages').where('consultationId','==',consultId).onSnapshot(snap=>{
+    let msgs = []; snap.forEach(d=>msgs.push({id:d.id,...d.data()}));
+    msgs.sort((a,b)=>(a.createdAt?.seconds||0)-(b.createdAt?.seconds||0));
+    const box = $('chatMsgs');
+    if(!box) return;
+    box.innerHTML = msgs.length ? msgs.map(m=>`
+      <div class="msg ${m.sender==='customer'?'me':'them'}">
+        ${m.message?escapeHtml(m.message):''}
+        ${m.imageData?`<img src="${m.imageData}">`:''}
+        <span class="time">${escapeHtml(m.senderName||'')} - ${fmtDate(m.createdAt)}</span>
+      </div>`).join('') : `<div class="empty-state">No messages yet. Say hello!</div>`;
+    box.scrollTop = box.scrollHeight;
+  }, err=> toast('Chat error: '+err.message));
+
+  $('chatSendBtn').addEventListener('click', sendChatMessage);
+  $('chatText').addEventListener('keypress', e=>{ if(e.key==='Enter') sendChatMessage(); });
+  $('chatImgInput').addEventListener('change', e=>{
+    const file = e.target.files[0];
+    if(!file) return;
+    compressImage(file, 500, 0.6, dataUrl=>{
+      db.collection('messages').add({
+        consultationId: activeChatConsultationId, sender:'customer', senderName: currentUserData?.name||'You',
+        imageData: dataUrl, createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+    });
+  });
+}
+function sendChatMessage(){
+  const text = $('chatText').value.trim();
+  if(!text) return;
+  db.collection('messages').add({
+    consultationId: activeChatConsultationId, sender:'customer', senderName: currentUserData?.name||'You',
+    message: text, createdAt: firebase.firestore.FieldValue.serverTimestamp()
+  });
+  $('chatText').value = '';
+}
+
+/* ================= ADMIN PANEL ================= */
+registerRoute('admin', renderAdmin);
+let adminPinVerified = false;
+function renderAdmin(){
+  if(!currentUser || !isAdmin){ toast('Admin access only'); navigate('home'); return; }
+  if(!adminPinVerified){
+    $('views').innerHTML = `
+      <div class="auth-box">
+        <h2>Admin PIN</h2>
+        <form id="pinForm">
+          <div class="form-group"><label>Enter Admin PIN</label><input type="password" id="pinInput" required></div>
+          <button class="btn btn-primary btn-block" type="submit">Unlock</button>
+        </form>
+      </div>`;
+    $('pinForm').addEventListener('submit', e=>{
+      e.preventDefault();
+      if($('pinInput').value === ADMIN_PIN){ adminPinVerified = true; renderAdmin(); }
+      else toast('Incorrect PIN');
+    });
+    return;
+  }
+  $('views').innerHTML = `
+    <section>
+      <div class="section-title"><h2>Admin Panel</h2></div>
+      <div class="tabs">
+        <button class="tab-btn active" data-at="dashboard">Dashboard</button>
+        <button class="tab-btn" data-at="products">Products</button>
+        <button class="tab-btn" data-at="categories">Categories</button>
+        <button class="tab-btn" data-at="orders">Orders</button>
+        <button class="tab-btn" data-at="customers">Customers</button>
+        <button class="tab-btn" data-at="doctors">Doctors</button>
+        <button class="tab-btn" data-at="consultations">Consultations</button>
+        <button class="tab-btn" data-at="prescriptions">Prescriptions</button>
+        <button class="tab-btn" data-at="faqs">FAQs</button>
+        <button class="tab-btn" data-at="settings">Site Settings</button>
+      </div>
+      <div id="adminTabContent"></div>
+    </section>`;
+  $('views').querySelectorAll('.tab-btn').forEach(b=> b.addEventListener('click', ()=>{
+    $('views').querySelectorAll('.tab-btn').forEach(x=>x.classList.remove('active'));
+    b.classList.add('active');
+    loadAdminTab(b.dataset.at);
+  }));
+  loadAdminTab('dashboard');
+}
+
+async function loadAdminTab(tab){
+  const c = $('adminTabContent');
+  c.innerHTML = `<div class="loading">Loading...</div>`;
+  if(tab==='dashboard') return adminDashboard(c);
+  if(tab==='products') return adminProducts(c);
+  if(tab==='categories') return adminCategories(c);
+  if(tab==='orders') return adminOrders(c);
+  if(tab==='customers') return adminCustomers(c);
+  if(tab==='doctors') return adminDoctors(c);
+  if(tab==='consultations') return adminConsultations(c);
+  if(tab==='prescriptions') return adminPrescriptions(c);
+  if(tab==='faqs') return adminFaqs(c);
+  if(tab==='settings') return adminSettings(c);
+}
+
+/* --- DASHBOARD --- */
+async function adminDashboard(c){
+  const [usersSnap, ordersSnap, consultSnap] = await Promise.all([
+    db.collection('users').get(), db.collection('orders').get(), db.collection('consultations').get()
+  ]);
+  let totalCustomers=0, totalOrders=0, pendingOrders=0, revenue=0;
+  ordersSnap.forEach(d=>{ const o=d.data(); totalOrders++; if((o.status||'Pending')==='Pending') pendingOrders++; if(o.status==='Delivered') revenue += (o.total||0); });
+  usersSnap.forEach(d=>{ if((d.data().role||'customer')==='customer') totalCustomers++; });
+  let totalConsult=0, activeConsult=0;
+  consultSnap.forEach(d=>{ totalConsult++; if((d.data().status||'Pending')!=='Completed') activeConsult++; });
+  c.innerHTML = `<div class="grid grid-4">
+    <div class="stat-card"><div class="val">${totalCustomers}</div><div class="lbl">Total Customers</div></div>
+    <div class="stat-card"><div class="val">${allProducts.length}</div><div class="lbl">Total Products</div></div>
+    <div class="stat-card"><div class="val">${totalOrders}</div><div class="lbl">Total Orders</div></div>
+    <div class="stat-card"><div class="val">${pendingOrders}</div><div class="lbl">Pending Orders</div></div>
+    <div class="stat-card"><div class="val">${totalConsult}</div><div class="lbl">Total Consultations</div></div>
+    <div class="stat-card"><div class="val">${activeConsult}</div><div class="lbl">Active Consultations</div></div>
+    <div class="stat-card"><div class="val">${money(revenue)}</div><div class="lbl">Revenue (Delivered)</div></div>
+  </div>`;
+}
+
+/* --- PRODUCTS --- */
+async function adminProducts(c){
+  await loadProducts();
+  c.innerHTML = `
+    <button class="btn btn-primary btn-sm" id="addProdBtn" style="margin-bottom:14px;">+ Add Product</button>
+    <div class="table-wrap"><table><thead><tr><th>Image</th><th>Name</th><th>Category</th><th>Price</th><th>Stock</th><th>Featured</th><th>Actions</th></tr></thead>
+    <tbody>${allProducts.map(p=>`
+      <tr data-id="${p.id}">
+        <td><img src="${escapeHtml(p.imageUrl)}" style="width:40px;height:40px;object-fit:cover;border-radius:6px;" onerror="this.src='https://placehold.co/40'"></td>
+        <td>${escapeHtml(p.name)}</td><td>${escapeHtml(catName(p.category))}</td>
+        <td>${money(p.discountPrice||p.price)}</td><td>${p.stockQty ?? '-'}</td><td>${p.featured?'Yes':'No'}</td>
+        <td><button class="btn btn-sm btn-ghost" data-edit>Edit</button> <button class="btn btn-sm btn-danger" data-del>Del</button></td>
+      </tr>`).join('')}</tbody></table></div>`;
+  $('addProdBtn').addEventListener('click', ()=> openProductForm());
+  delegate('adminTabContent','[data-edit]','click', el=> openProductForm(el.closest('tr').dataset.id));
+  delegate('adminTabContent','[data-del]','click', async el=>{
+    if(!confirm('Delete this product?')) return;
+    await db.collection('products').doc(el.closest('tr').dataset.id).delete();
+    toast('Deleted'); adminProducts(c);
+  });
+}
+function openProductForm(id){
+  const p = id ? allProducts.find(p=>p.id===id) : {};
+  const overlay = document.createElement('div');
+  overlay.className='modal-overlay';
+  overlay.innerHTML = `<div class="modal-box">
+    <button class="modal-close" data-close>&times;</button>
+    <h3>${id?'Edit':'Add'} Product</h3>
+    <form id="prodForm" style="margin-top:12px;">
+      <div class="form-group"><label>Name</label><input required id="pfName2" value="${escapeHtml(p.name||'')}"></div>
+      <div class="form-group"><label>Category</label><select id="pfCat">${allCategories.map(c=>`<option value="${c.id}" ${p.category===c.id?'selected':''}>${escapeHtml(c.name)}</option>`).join('')}</select></div>
+      <div class="form-group"><label>Description</label><textarea id="pfDesc">${escapeHtml(p.description||'')}</textarea></div>
+      <div class="form-group"><label>Price</label><input type="number" required id="pfPrice" value="${p.price||''}"></div>
+      <div class="form-group"><label>Discount Price (optional)</label><input type="number" id="pfDisc" value="${p.discountPrice||''}"></div>
+      <div class="form-group"><label>Image URL</label><input required id="pfImg" value="${escapeHtml(p.imageUrl||'')}"></div>
+      <div class="form-group"><label>Stock Quantity</label><input type="number" id="pfStock" value="${p.stockQty ?? 10}"></div>
+      <div class="form-group"><label><input type="checkbox" id="pfFeat" ${p.featured?'checked':''}> Featured Product</label></div>
+      <button class="btn btn-primary btn-block" type="submit">Save Product</button>
+    </form></div>`;
+  document.body.appendChild(overlay);
+  overlay.addEventListener('click', e=>{ if(e.target===overlay || e.target.closest('[data-close]')) overlay.remove(); });
+  overlay.querySelector('#prodForm').addEventListener('submit', async e=>{
+    e.preventDefault();
+    const data = {
+      name: $('pfName2').value, category: $('pfCat').value, description: $('pfDesc').value,
+      price: Number($('pfPrice').value), discountPrice: $('pfDisc').value ? Number($('pfDisc').value) : null,
+      imageUrl: $('pfImg').value, stockQty: Number($('pfStock').value), featured: $('pfFeat').checked
+    };
+    try{
+      if(id) await db.collection('products').doc(id).update(data);
+      else { data.createdAt = firebase.firestore.FieldValue.serverTimestamp(); await db.collection('products').add(data); }
+      toast('Product saved'); overlay.remove(); adminProducts($('adminTabContent'));
+    }catch(err){ toast(err.message); }
+  });
+}
+
+/* --- CATEGORIES --- */
+async function adminCategories(c){
+  await loadCategories();
+  c.innerHTML = `
+    <button class="btn btn-primary btn-sm" id="addCatBtn" style="margin-bottom:14px;">+ Add Category</button>
+    <div class="table-wrap"><table><thead><tr><th>Image</th><th>Name</th><th>Description</th><th>Actions</th></tr></thead>
+    <tbody>${allCategories.map(cat=>`
+      <tr data-id="${cat.id}">
+        <td><img src="${escapeHtml(cat.imageUrl)}" style="width:40px;height:40px;object-fit:cover;border-radius:6px;" onerror="this.src='https://placehold.co/40'"></td>
+        <td>${escapeHtml(cat.name)}</td><td style="max-width:200px;white-space:normal;">${escapeHtml(cat.description||'')}</td>
+        <td><button class="btn btn-sm btn-ghost" data-edit>Edit</button> <button class="btn btn-sm btn-danger" data-del>Del</button></td>
+      </tr>`).join('')}</tbody></table></div>`;
+  $('addCatBtn').addEventListener('click', ()=> openCategoryForm());
+  delegate('adminTabContent','[data-edit]','click', el=> openCategoryForm(el.closest('tr').dataset.id));
+  delegate('adminTabContent','[data-del]','click', async el=>{
+    if(!confirm('Delete this category?')) return;
+    await db.collection('categories').doc(el.closest('tr').dataset.id).delete();
+    toast('Deleted'); adminCategories(c);
+  });
+}
+function openCategoryForm(id){
+  const cat = id ? allCategories.find(c=>c.id===id) : {};
+  const overlay = document.createElement('div');
+  overlay.className='modal-overlay';
+  overlay.innerHTML = `<div class="modal-box">
+    <button class="modal-close" data-close>&times;</button>
+    <h3>${id?'Edit':'Add'} Category</h3>
+    <form id="catForm" style="margin-top:12px;">
+      <div class="form-group"><label>Name</label><input required id="cfName" value="${escapeHtml(cat.name||'')}"></div>
+      <div class="form-group"><label>Description</label><textarea id="cfDesc">${escapeHtml(cat.description||'')}</textarea></div>
+      <div class="form-group"><label>Image URL</label><input required id="cfImg" value="${escapeHtml(cat.imageUrl||'')}"></div>
+      <button class="btn btn-primary btn-block" type="submit">Save Category</button>
+    </form></div>`;
+  document.body.appendChild(overlay);
+  overlay.addEventListener('click', e=>{ if(e.target===overlay || e.target.closest('[data-close]')) overlay.remove(); });
+  overlay.querySelector('#catForm').addEventListener('submit', async e=>{
+    e.preventDefault();
+    const data = { name:$('cfName').value, description:$('cfDesc').value, imageUrl:$('cfImg').value };
+    try{
+      if(id) await db.collection('categories').doc(id).update(data);
+      else await db.collection('categories').add(data);
+      toast('Category saved'); overlay.remove(); adminCategories($('adminTabContent'));
+    }catch(err){ toast(err.message); }
+  });
+}
+
+/* --- ORDERS --- */
+async function adminOrders(c){
+  const snap = await db.collection('orders').get();
+  let orders = []; snap.forEach(d=>orders.push({id:d.id,...d.data()}));
+  orders.sort((a,b)=>(b.createdAt?.seconds||0)-(a.createdAt?.seconds||0));
+  c.innerHTML = `<div class="table-wrap"><table><thead><tr><th>Customer</th><th>Total</th><th>Status</th><th>Date</th><th>Actions</th></tr></thead>
+    <tbody>${orders.map(o=>`
+      <tr data-id="${o.id}">
+        <td>${escapeHtml(o.customerName)}<br><span style="font-size:11px;color:var(--muted);">${escapeHtml(o.phone||'')}</span></td>
+        <td>${money(o.total)}</td>
+        <td><select data-status>
+          ${['Pending','Confirmed','Processing','Shipped','Delivered','Cancelled'].map(s=>`<option value="${s}" ${o.status===s?'selected':''}>${s}</option>`).join('')}
+        </select></td>
+        <td>${fmtDate(o.createdAt)}</td>
+        <td><button class="btn btn-sm btn-ghost" data-view-order>View</button></td>
+      </tr>`).join('') || '<tr><td colspan="5">No orders yet.</td></tr>'}</tbody></table></div>`;
+  delegate('adminTabContent','[data-status]','change', async (el)=>{
+    const id = el.closest('tr').dataset.id;
+    await db.collection('orders').doc(id).update({status: el.value});
+    toast('Order status updated');
+  });
+  delegate('adminTabContent','[data-view-order]','click', el=>{
+    const o = orders.find(o=>o.id===el.closest('tr').dataset.id);
+    const overlay = document.createElement('div');
+    overlay.className='modal-overlay';
+    overlay.innerHTML = `<div class="modal-box"><button class="modal-close" data-close>&times;</button>
+      <h3>Order Details</h3>
+      <p style="font-size:13px;margin-top:10px;"><strong>${escapeHtml(o.customerName)}</strong><br>${escapeHtml(o.phone)} - ${escapeHtml(o.email)}</p>
+      <p style="font-size:13px;margin-top:6px;">${escapeHtml(o.address)}, ${escapeHtml(o.city)}, ${escapeHtml(o.state)}</p>
+      <div style="margin-top:12px;">${o.items.map(i=>`<div style="display:flex;justify-content:space-between;font-size:13px;padding:6px 0;border-bottom:1px solid var(--border);"><span>${escapeHtml(i.name)} x${i.qty}</span><span>${money(i.price*i.qty)}</span></div>`).join('')}</div>
+      <div class="sum-row total" style="margin-top:10px;"><span>Total</span><span>${money(o.total)}</span></div>
+    </div>`;
+    document.body.appendChild(overlay);
+    overlay.addEventListener('click', e=>{ if(e.target===overlay || e.target.closest('[data-close]')) overlay.remove(); });
+  });
+}
+
+/* --- CUSTOMERS --- */
+async function adminCustomers(c){
+  const snap = await db.collection('users').where('role','==','customer').get();
+  let users = []; snap.forEach(d=>users.push({id:d.id,...d.data()}));
+  c.innerHTML = `<div class="table-wrap"><table><thead><tr><th>Name</th><th>Email</th><th>Phone</th><th>Joined</th></tr></thead>
+    <tbody>${users.map(u=>`<tr><td>${escapeHtml(u.name)}</td><td>${escapeHtml(u.email)}</td><td>${escapeHtml(u.phone||'')}</td><td>${fmtDate(u.createdAt)}</td></tr>`).join('') || '<tr><td colspan="4">No customers yet.</td></tr>'}</tbody></table></div>`;
+}
+
+/* --- DOCTORS --- */
+async function adminDoctors(c){
+  await loadDoctors();
+  c.innerHTML = `
+    <button class="btn btn-primary btn-sm" id="addDocBtn" style="margin-bottom:14px;">+ Add Doctor</button>
+    <div class="table-wrap"><table><thead><tr><th>Photo</th><th>Name</th><th>Specialty</th><th>Active</th><th>Actions</th></tr></thead>
+    <tbody>${allDoctors.map(d=>`
+      <tr data-id="${d.id}">
+        <td><img src="${escapeHtml(d.imageUrl||'')}" style="width:36px;height:36px;border-radius:50%;object-fit:cover;" onerror="this.src='https://placehold.co/36'"></td>
+        <td>${escapeHtml(d.name)}</td><td>${escapeHtml(d.specialty||'')}</td><td>${d.active!==false?'Yes':'No'}</td>
+        <td><button class="btn btn-sm btn-ghost" data-edit>Edit</button> <button class="btn btn-sm btn-danger" data-del>Del</button></td>
+      </tr>`).join('')}</tbody></table></div>`;
+  $('addDocBtn').addEventListener('click', ()=> openDoctorForm());
+  delegate('adminTabContent','[data-edit]','click', el=> openDoctorForm(el.closest('tr').dataset.id));
+  delegate('adminTabContent','[data-del]','click', async el=>{
+    if(!confirm('Delete this doctor?')) return;
+    await db.collection('doctors').doc(el.closest('tr').dataset.id).delete();
+    toast('Deleted'); adminDoctors(c);
+  });
+}
+function openDoctorForm(id){
+  const d = id ? allDoctors.find(d=>d.id===id) : {};
+  const overlay = document.createElement('div');
+  overlay.className='modal-overlay';
+  overlay.innerHTML = `<div class="modal-box"><button class="modal-close" data-close>&times;</button>
+    <h3>${id?'Edit':'Add'} Doctor</h3>
+    <form id="docForm" style="margin-top:12px;">
+      <div class="form-group"><label>Name</label><input required id="dfName" value="${escapeHtml(d.name||'')}"></div>
+      <div class="form-group"><label>Specialty</label><input id="dfSpec" value="${escapeHtml(d.specialty||'')}"></div>
+      <div class="form-group"><label>Description</label><textarea id="dfDesc">${escapeHtml(d.description||'')}</textarea></div>
+      <div class="form-group"><label>Profile Image URL</label><input id="dfImg" value="${escapeHtml(d.imageUrl||'')}"></div>
+      <div class="form-group"><label><input type="checkbox" id="dfActive" ${d.active!==false?'checked':''}> Active</label></div>
+      <button class="btn btn-primary btn-block" type="submit">Save Doctor</button>
+    </form></div>`;
+  document.body.appendChild(overlay);
+  overlay.addEventListener('click', e=>{ if(e.target===overlay || e.target.closest('[data-close]')) overlay.remove(); });
+  overlay.querySelector('#docForm').addEventListener('submit', async e=>{
+    e.preventDefault();
+    const data = { name:$('dfName').value, specialty:$('dfSpec').value, description:$('dfDesc').value, imageUrl:$('dfImg').value, active:$('dfActive').checked };
+    try{
+      if(id) await db.collection('doctors').doc(id).update(data);
+      else await db.collection('doctors').add(data);
+      toast('Doctor saved'); overlay.remove(); adminDoctors($('adminTabContent'));
+    }catch(err){ toast(err.message); }
+  });
+}
+
+/* --- CONSULTATIONS (admin) --- */
+async function adminConsultations(c){
+  const snap = await db.collection('consultations').get();
+  let list = []; snap.forEach(d=>list.push({id:d.id,...d.data()}));
+  list.sort((a,b)=>(b.createdAt?.seconds||0)-(a.createdAt?.seconds||0));
+  c.innerHTML = `<div class="table-wrap"><table><thead><tr><th>Patient</th><th>Doctor</th><th>Type</th><th>Status</th><th>Actions</th></tr></thead>
+    <tbody>${list.map(cn=>{
+      const doc = allDoctors.find(d=>d.id===cn.doctorId);
+      return `<tr data-id="${cn.id}">
+        <td>${escapeHtml(cn.patientName||'')}</td><td>${escapeHtml(doc?doc.name:'-')}</td><td>${escapeHtml(cn.type)}</td>
+        <td><select data-status>${['Pending','Accepted','Completed','Cancelled'].map(s=>`<option ${cn.status===s?'selected':''}>${s}</option>`).join('')}</select></td>
+        <td><button class="btn btn-sm btn-ghost" data-chat>Chat</button> <button class="btn btn-sm btn-ghost" data-notes>Notes</button> <button class="btn btn-sm btn-primary" data-presc>Prescribe</button></td>
+      </tr>`;
+    }).join('') || '<tr><td colspan="5">No consultations yet.</td></tr>'}</tbody></table></div>`;
+  delegate('adminTabContent','[data-status]','change', async el=>{
+    await db.collection('consultations').doc(el.closest('tr').dataset.id).update({status: el.value});
+    toast('Status updated');
+  });
+  delegate('adminTabContent','[data-chat]','click', el=> openAdminChat(el.closest('tr').dataset.id));
+  delegate('adminTabContent','[data-notes]','click', el=> openAdminNotes(el.closest('tr').dataset.id, list));
+  delegate('adminTabContent','[data-presc]','click', el=> openPrescriptionForm(el.closest('tr').dataset.id, list));
+}
+function openAdminChat(consultId){
+  const overlay = document.createElement('div');
+  overlay.className='modal-overlay';
+  overlay.innerHTML = `<div class="modal-box" style="max-width:480px;">
+    <button class="modal-close" data-close>&times;</button>
+    <h3>Consultation Chat</h3>
+    <div class="chat-wrap" style="height:50vh;margin-top:10px;">
+      <div class="chat-msgs" id="adminChatMsgs"></div>
+      <div class="chat-input">
+        <label>📎<input type="file" id="adminChatImg" accept="image/*" class="hidden"></label>
+        <input type="text" id="adminChatText" placeholder="Type a message...">
+        <button id="adminChatSend">➤</button>
+      </div>
+    </div></div>`;
+  document.body.appendChild(overlay);
+  overlay.addEventListener('click', e=>{ if(e.target===overlay || e.target.closest('[data-close]')) { unsub(); overlay.remove(); } });
+  const unsub = db.collection('messages').where('consultationId','==',consultId).onSnapshot(snap=>{
+    let msgs=[]; snap.forEach(d=>msgs.push({id:d.id,...d.data()}));
+    msgs.sort((a,b)=>(a.createdAt?.seconds||0)-(b.createdAt?.seconds||0));
+    const box = overlay.querySelector('#adminChatMsgs');
+    box.innerHTML = msgs.map(m=>`<div class="msg ${m.sender==='doctor'?'me':'them'}">${m.message?escapeHtml(m.message):''}${m.imageData?`<img src="${m.imageData}">`:''}<span class="time">${escapeHtml(m.senderName||'')} - ${fmtDate(m.createdAt)}</span></div>`).join('');
+    box.scrollTop = box.scrollHeight;
+  });
+  overlay.querySelector('#adminChatSend').addEventListener('click', ()=>{
+    const val = overlay.querySelector('#adminChatText').value.trim();
+    if(!val) return;
+    db.collection('messages').add({consultationId:consultId, sender:'doctor', senderName: currentUserData?.name||'Doctor', message:val, createdAt: firebase.firestore.FieldValue.serverTimestamp()});
+    overlay.querySelector('#adminChatText').value='';
+  });
+  overlay.querySelector('#adminChatImg').addEventListener('change', e=>{
+    const file = e.target.files[0]; if(!file) return;
+    compressImage(file, 500, 0.6, dataUrl=>{
+      db.collection('messages').add({consultationId:consultId, sender:'doctor', senderName: currentUserData?.name||'Doctor', imageData:dataUrl, createdAt: firebase.firestore.FieldValue.serverTimestamp()});
+    });
+  });
+}
+function openAdminNotes(consultId, list){
+  const cn = list.find(c=>c.id===consultId);
+  const overlay = document.createElement('div');
+  overlay.className='modal-overlay';
+  overlay.innerHTML = `<div class="modal-box"><button class="modal-close" data-close>&times;</button>
+    <h3>Consultation Notes</h3>
+    <p style="font-size:13px;color:var(--muted);margin:10px 0;">Issue: ${escapeHtml(cn.issue||'')}</p>
+    <form id="notesForm">
+      <div class="form-group"><label>Doctor Notes</label><textarea id="notesText">${escapeHtml(cn.notes||'')}</textarea></div>
+      <button class="btn btn-primary btn-block" type="submit">Save Notes</button>
+    </form></div>`;
+  document.body.appendChild(overlay);
+  overlay.addEventListener('click', e=>{ if(e.target===overlay || e.target.closest('[data-close]')) overlay.remove(); });
+  overlay.querySelector('#notesForm').addEventListener('submit', async e=>{
+    e.preventDefault();
+    await db.collection('consultations').doc(consultId).update({notes: $('notesText').value});
+    toast('Notes saved'); overlay.remove();
+  });
+}
+function openPrescriptionForm(consultId, list){
+  const cn = list.find(c=>c.id===consultId);
+  const overlay = document.createElement('div');
+  overlay.className='modal-overlay';
+  overlay.innerHTML = `<div class="modal-box"><button class="modal-close" data-close>&times;</button>
+    <h3>Create Prescription</h3>
+    <form id="prescForm" style="margin-top:10px;">
+      <div class="form-group"><label>Medicine/Product Name</label><input required id="prName"></div>
+      <div class="form-group"><label>Dosage</label><input required id="prDosage"></div>
+      <div class="form-group"><label>Frequency</label><input required id="prFreq"></div>
+      <div class="form-group"><label>Duration</label><input required id="prDur"></div>
+      <div class="form-group"><label>Instructions</label><textarea id="prInstr"></textarea></div>
+      <button class="btn btn-primary btn-block" type="submit">Save Prescription</button>
+    </form></div>`;
+  document.body.appendChild(overlay);
+  overlay.addEventListener('click', e=>{ if(e.target===overlay || e.target.closest('[data-close]')) overlay.remove(); });
+  overlay.querySelector('#prescForm').addEventListener('submit', async e=>{
+    e.preventDefault();
+    const item = {name:$('prName').value, dosage:$('prDosage').value, frequency:$('prFreq').value, duration:$('prDur').value, instructions:$('prInstr').value};
+    try{
+      await db.collection('prescriptions').add({
+        consultationId: consultId, userId: cn.userId, doctorId: cn.doctorId,
+        items:[item], date: firebase.firestore.FieldValue.serverTimestamp()
+      });
+      toast('Prescription created'); overlay.remove();
+    }catch(err){ toast(err.message); }
+  });
+}
+
+/* --- PRESCRIPTIONS (admin list) --- */
+async function adminPrescriptions(c){
+  const snap = await db.collection('prescriptions').get();
+  let list = []; snap.forEach(d=>list.push({id:d.id,...d.data()}));
+  list.sort((a,b)=>(b.date?.seconds||0)-(a.date?.seconds||0));
+  c.innerHTML = `<div class="table-wrap"><table><thead><tr><th>Date</th><th>Doctor</th><th>Items</th><th>Actions</th></tr></thead>
+    <tbody>${list.map(pr=>`
+      <tr data-id="${pr.id}">
+        <td>${fmtDate(pr.date)}</td><td>${escapeHtml((allDoctors.find(d=>d.id===pr.doctorId)||{}).name||'-')}</td>
+        <td>${(pr.items||[]).map(i=>escapeHtml(i.name)).join(', ')}</td>
+        <td><button class="btn btn-sm btn-danger" data-del>Delete</button></td>
+      </tr>`).join('') || '<tr><td colspan="4">No prescriptions yet.</td></tr>'}</tbody></table></div>`;
+  delegate('adminTabContent','[data-del]','click', async el=>{
+    if(!confirm('Delete this prescription?')) return;
+    await db.collection('prescriptions').doc(el.closest('tr').dataset.id).delete();
+    toast('Deleted'); adminPrescriptions(c);
+  });
+}
+
+/* --- FAQS --- */
+async function adminFaqs(c){
+  await loadFaqs();
+  c.innerHTML = `
+    <button class="btn btn-primary btn-sm" id="addFaqBtn" style="margin-bottom:14px;">+ Add FAQ</button>
+    <div class="table-wrap"><table><thead><tr><th>Question</th><th>Actions</th></tr></thead>
+    <tbody>${allFaqs.map(f=>`
+      <tr data-id="${f.id}"><td>${escapeHtml(f.question)}</td>
+      <td><button class="btn btn-sm btn-ghost" data-edit>Edit</button> <button class="btn btn-sm btn-danger" data-del>Del</button></td></tr>`).join('') || '<tr><td colspan="2">No FAQs yet.</td></tr>'}</tbody></table></div>`;
+  $('addFaqBtn').addEventListener('click', ()=> openFaqForm());
+  delegate('adminTabContent','[data-edit]','click', el=> openFaqForm(el.closest('tr').dataset.id));
+  delegate('adminTabContent','[data-del]','click', async el=>{
+    if(!confirm('Delete this FAQ?')) return;
+    await db.collection('faqs').doc(el.closest('tr').dataset.id).delete();
+    toast('Deleted'); adminFaqs(c);
+  });
+}
+function openFaqForm(id){
+  const f = id ? allFaqs.find(f=>f.id===id) : {};
+  const overlay = document.createElement('div');
+  overlay.className='modal-overlay';
+  overlay.innerHTML = `<div class="modal-box"><button class="modal-close" data-close>&times;</button>
+    <h3>${id?'Edit':'Add'} FAQ</h3>
+    <form id="faqForm" style="margin-top:10px;">
+      <div class="form-group"><label>Question</label><input required id="faqQ" value="${escapeHtml(f.question||'')}"></div>
+      <div class="form-group"><label>Answer</label><textarea required id="faqA">${escapeHtml(f.answer||'')}</textarea></div>
+      <button class="btn btn-primary btn-block" type="submit">Save FAQ</button>
+    </form></div>`;
+  document.body.appendChild(overlay);
+  overlay.addEventListener('click', e=>{ if(e.target===overlay || e.target.closest('[data-close]')) overlay.remove(); });
+  overlay.querySelector('#faqForm').addEventListener('submit', async e=>{
+    e.preventDefault();
+    const data = { question:$('faqQ').value, answer:$('faqA').value, order: id ? (f.order||0) : allFaqs.length };
+    try{
+      if(id) await db.collection('faqs').doc(id).update(data);
+      else await db.collection('faqs').add(data);
+      toast('FAQ saved'); overlay.remove(); adminFaqs($('adminTabContent'));
+    }catch(err){ toast(err.message); }
+  });
+}
+
+/* --- SITE SETTINGS --- */
+async function adminSettings(c){
+  await loadSettings();
+  c.innerHTML = `<div class="card">
+    <form id="settingsForm">
+      <div class="form-group"><label>Hero Title</label><input id="stHero" value="${escapeHtml(siteSettings.heroTitle)}"></div>
+      <div class="form-group"><label>Hero Subtitle</label><textarea id="stSub">${escapeHtml(siteSettings.heroSubtitle)}</textarea></div>
+      <div class="form-group"><label>About Text</label><textarea id="stAbout">${escapeHtml(siteSettings.aboutText)}</textarea></div>
+      <div class="form-group"><label>Contact Phone</label><input id="stPhone" value="${escapeHtml(siteSettings.contactPhone)}"></div>
+      <div class="form-group"><label>Contact Email</label><input id="stEmail" value="${escapeHtml(siteSettings.contactEmail)}"></div>
+      <div class="form-group"><label>Contact Address</label><input id="stAddress" value="${escapeHtml(siteSettings.contactAddress)}"></div>
+      <button class="btn btn-primary btn-block" type="submit">Save Settings</button>
+    </form>
+  </div>`;
+  $('settingsForm').addEventListener('submit', async e=>{
+    e.preventDefault();
+    const data = {
+      heroTitle:$('stHero').value, heroSubtitle:$('stSub').value, aboutText:$('stAbout').value,
+      contactPhone:$('stPhone').value, contactEmail:$('stEmail').value, contactAddress:$('stAddress').value
+    };
+    try{
+      await db.collection('settings').doc('site').set(data, {merge:true});
+      siteSettings = {...siteSettings, ...data};
+      toast('Settings saved');
+    }catch(err){ toast(err.message); }
+  });
+}
+
+/* ================= INIT ================= */
+async function init(){
+  updateCartBadge();
+  await Promise.all([loadProducts(), loadCategories(), loadDoctors(), loadFaqs(), loadSettings()]);
+  navigate('home');
+}
+init();
+</script>
+</body>
+</html>
