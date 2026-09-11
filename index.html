@@ -174,6 +174,29 @@ table th, table td{padding:10px 8px; border-bottom:1px solid var(--border); text
 .toast{position:fixed; bottom:20px; left:50%; transform:translateX(-50%); background:#0f2027; color:#fff; padding:12px 20px; border-radius:999px; font-size:13px; z-index:2000; box-shadow:0 6px 20px rgba(0,0,0,.2);}
 .wa-float{position:fixed; bottom:20px; right:16px; background:#25d366; color:#fff; width:52px; height:52px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:26px; box-shadow:0 6px 16px rgba(0,0,0,.25); z-index:500;}
 
+/* AI CHAT WIDGET */
+.mw-chat-fab{position:fixed; bottom:82px; right:16px; background:var(--primary); color:#fff; width:52px; height:52px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:24px; box-shadow:0 6px 16px rgba(0,0,0,.25); z-index:501; border:none;}
+.mw-chat-fab .mw-dot{position:absolute; top:2px; right:2px; width:12px; height:12px; background:var(--accent); border-radius:50%; border:2px solid #fff;}
+.mw-chat-panel{position:fixed; bottom:0; right:0; left:0; top:0; background:#fff; z-index:1500; display:none; flex-direction:column; box-shadow:-4px 0 24px rgba(0,0,0,.2);}
+.mw-chat-panel.open{display:flex;}
+.mw-chat-head{background:linear-gradient(135deg,#0f3d22,#1a5632); color:#fff; padding:16px; display:flex; align-items:center; justify-content:space-between;}
+.mw-chat-head h4{font-size:15px; margin-bottom:2px;}
+.mw-chat-head span{font-size:11px; opacity:.85;}
+.mw-chat-head button{background:rgba(255,255,255,.15); color:#fff; width:32px; height:32px; border-radius:50%; font-size:18px;}
+.mw-chat-msgs{flex:1; overflow-y:auto; padding:14px; display:flex; flex-direction:column; gap:10px; background:var(--bg);}
+.mw-msg{max-width:82%; padding:10px 14px; border-radius:14px; font-size:13.5px; line-height:1.4;}
+.mw-msg.user{align-self:flex-end; background:var(--primary); color:#fff; border-bottom-right-radius:4px;}
+.mw-msg.bot{align-self:flex-start; background:#fff; color:var(--text); border:1px solid var(--border); border-bottom-left-radius:4px;}
+.mw-msg.admin{align-self:flex-start; background:#fde6f0; color:var(--accent-dark); border-bottom-left-radius:4px;}
+.mw-msg.admin::before{content:"Support Team"; display:block; font-size:10px; font-weight:700; text-transform:uppercase; margin-bottom:3px; opacity:.8;}
+.mw-cta{display:flex; gap:8px; margin-top:10px; flex-wrap:wrap;}
+.mw-chat-input{display:flex; gap:8px; padding:10px; border-top:1px solid var(--border); background:#fff;}
+.mw-chat-input input{flex:1; padding:11px 14px; border-radius:999px; border:1px solid var(--border); font-size:14px;}
+.mw-chat-input button{width:42px; height:42px; border-radius:50%; background:var(--primary); color:#fff; font-size:16px;}
+@media(min-width:640px){
+  .mw-chat-panel{top:auto; left:auto; bottom:90px; right:16px; width:360px; height:520px; border-radius:18px; overflow:hidden;}
+}
+
 @media(min-width:860px){
   .menu-toggle{display:none;}
   .nav-links{display:flex !important; flex-direction:row; background:none; border:none;}
@@ -215,6 +238,19 @@ table th, table td{padding:10px 8px; border-bottom:1px solid var(--border); text
 </footer>
 
 <a class="wa-float" href="https://wa.me/2348056911810" target="_blank" title="Chat on WhatsApp">💬</a>
+
+<button class="mw-chat-fab" id="mwChatFab" title="Chat with us">🤖<span class="mw-dot"></span></button>
+<div class="mw-chat-panel" id="mwChatPanel">
+  <div class="mw-chat-head">
+    <div><h4>Med Whole Assistant</h4><span>Ask about products, orders, delivery &amp; more</span></div>
+    <button id="mwChatClose">&times;</button>
+  </div>
+  <div class="mw-chat-msgs" id="mwChatMsgs"></div>
+  <div class="mw-chat-input">
+    <input type="text" id="mwChatInput" placeholder="Type your question...">
+    <button id="mwChatSend">➤</button>
+  </div>
+</div>
 
 <div id="toastHost"></div>
 
@@ -974,6 +1010,7 @@ function renderAdmin(){
         <button class="tab-btn" data-at="consultations">Consultations</button>
         <button class="tab-btn" data-at="prescriptions">Prescriptions</button>
         <button class="tab-btn" data-at="faqs">FAQs</button>
+        <button class="tab-btn" data-at="supportChats">Live Chat</button>
         <button class="tab-btn" data-at="settings">Site Settings</button>
       </div>
       <div id="adminTabContent"></div>
@@ -998,6 +1035,7 @@ async function loadAdminTab(tab){
   if(tab==='consultations') return adminConsultations(c);
   if(tab==='prescriptions') return adminPrescriptions(c);
   if(tab==='faqs') return adminFaqs(c);
+  if(tab==='supportChats') return adminSupportChats(c);
   if(tab==='settings') return adminSettings(c);
 }
 
@@ -1056,19 +1094,36 @@ function openProductForm(id){
       <div class="form-group"><label>Description</label><textarea id="pfDesc">${escapeHtml(p.description||'')}</textarea></div>
       <div class="form-group"><label>Price</label><input type="number" required id="pfPrice" value="${p.price||''}"></div>
       <div class="form-group"><label>Discount Price (optional)</label><input type="number" id="pfDisc" value="${p.discountPrice||''}"></div>
-      <div class="form-group"><label>Image URL</label><input required id="pfImg" value="${escapeHtml(p.imageUrl||'')}"></div>
+      <div class="form-group">
+        <label>Product Image</label>
+        <img id="pfImgPreview" src="${escapeHtml(p.imageUrl||'https://placehold.co/400x300?text=Product')}" style="width:100%;max-height:180px;object-fit:cover;border-radius:10px;margin-bottom:8px;" onerror="this.src='https://placehold.co/400x300?text=Product'">
+        <input type="file" accept="image/*" id="pfImgFile">
+        <div id="pfImgStatus" style="font-size:11px;color:var(--muted);margin-top:4px;">Upload a photo from your device \u2014 no URL needed.</div>
+      </div>
       <div class="form-group"><label>Stock Quantity</label><input type="number" id="pfStock" value="${p.stockQty ?? 10}"></div>
       <div class="form-group"><label><input type="checkbox" id="pfFeat" ${p.featured?'checked':''}> Featured Product</label></div>
       <button class="btn btn-primary btn-block" type="submit">Save Product</button>
     </form></div>`;
   document.body.appendChild(overlay);
+  let pfImgData = p.imageUrl || '';
   overlay.addEventListener('click', e=>{ if(e.target===overlay || e.target.closest('[data-close]')) overlay.remove(); });
+  overlay.querySelector('#pfImgFile').addEventListener('change', e=>{
+    const file = e.target.files[0];
+    if(!file) return;
+    overlay.querySelector('#pfImgStatus').textContent = 'Processing image...';
+    compressImage(file, 800, 0.72, dataUrl=>{
+      pfImgData = dataUrl;
+      overlay.querySelector('#pfImgPreview').src = dataUrl;
+      overlay.querySelector('#pfImgStatus').textContent = 'Image ready \u2713';
+    });
+  });
   overlay.querySelector('#prodForm').addEventListener('submit', async e=>{
     e.preventDefault();
+    if(!pfImgData){ toast('Please choose a product image'); return; }
     const data = {
       name: $('pfName2').value, category: $('pfCat').value, description: $('pfDesc').value,
       price: Number($('pfPrice').value), discountPrice: $('pfDisc').value ? Number($('pfDisc').value) : null,
-      imageUrl: $('pfImg').value, stockQty: Number($('pfStock').value), featured: $('pfFeat').checked
+      imageUrl: pfImgData, stockQty: Number($('pfStock').value), featured: $('pfFeat').checked
     };
     try{
       if(id) await db.collection('products').doc(id).update(data);
@@ -1410,10 +1465,226 @@ async function adminSettings(c){
   });
 }
 
+/* ================= AI CHAT SUPPORT WIDGET ================= */
+/* Free, no-backend assistant: matches visitor questions against live site data
+   (products, categories, doctors, FAQs, settings). After 4 bot replies it offers
+   a WhatsApp link or a live handoff to a human via the Admin > Live Chat tab. */
+let mwChatSessionId = localStorage.getItem('mw_chat_session');
+if(!mwChatSessionId){
+  mwChatSessionId = 'sess_' + Date.now() + '_' + Math.random().toString(36).slice(2,8);
+  localStorage.setItem('mw_chat_session', mwChatSessionId);
+}
+let mwChatOpen = false;
+let mwChatMessages = JSON.parse(localStorage.getItem('mw_chat_msgs_'+mwChatSessionId) || 'null') || [
+  {sender:'bot', text:"Hi! \ud83d\udc4b I'm the Med Whole Assistant. Ask me about products, prices, delivery, orders, consultations or your account.", cta:false}
+];
+let mwBotReplyCount = Number(localStorage.getItem('mw_chat_botcount_'+mwChatSessionId) || 0);
+let mwEscalated = localStorage.getItem('mw_chat_escalated_'+mwChatSessionId) === '1';
+let mwSupportUnsub = null;
+
+function mwSaveState(){
+  localStorage.setItem('mw_chat_msgs_'+mwChatSessionId, JSON.stringify(mwChatMessages));
+  localStorage.setItem('mw_chat_botcount_'+mwChatSessionId, String(mwBotReplyCount));
+  localStorage.setItem('mw_chat_escalated_'+mwChatSessionId, mwEscalated ? '1' : '0');
+}
+function mwWaLink(){
+  const phone = (siteSettings.contactPhone||'08000000000').replace(/^0/,'');
+  return `https://wa.me/234${phone}?text=${encodeURIComponent('Hi, I need help on the Med Whole website.')}`;
+}
+function mwRenderMessages(){
+  const box = $('mwChatMsgs');
+  if(!box) return;
+  box.innerHTML = mwChatMessages.map(m=>`
+    <div class="mw-msg ${m.sender}">${escapeHtml(m.text).replace(/\n/g,'<br>')}
+      ${m.cta ? `<div class="mw-cta">
+          <a href="${mwWaLink()}" target="_blank" class="btn btn-sm btn-primary">WhatsApp Us</a>
+          <button type="button" class="btn btn-sm btn-outline" data-mw-human>Talk to a Human</button>
+        </div>` : ''}
+    </div>`).join('');
+  box.scrollTop = box.scrollHeight;
+}
+function mwAddMessage(sender, text, cta){
+  mwChatMessages.push({sender, text, cta: !!cta});
+  mwSaveState();
+  mwRenderMessages();
+}
+function mwBuildKnowledgeBase(){
+  const kb = [];
+  kb.push({k:['hi','hello','hey','good morning','good afternoon','good evening'], a:"Hello! \ud83d\udc4b Welcome to Med Whole Limited. I can help with products, prices, orders, delivery, consultations or your account. What would you like to know?"});
+  kb.push({k:['delivery','shipping','fee','deliver','how long'], a:`Our delivery fee is ${money(DELIVERY_FEE)} per order within Nigeria. Orders are shipped once payment is confirmed.`});
+  kb.push({k:['payment','pay','how do i pay','bank','checkout'], a:"To order: add items to your cart from the Shop page, then go to Cart and checkout. Our team will confirm payment details with you afterwards."});
+  kb.push({k:['order','how to order','buy','purchase','shop'], a:'Go to "Shop" in the menu, pick a product, tap "Add to Cart", then open your Cart to checkout. You will need to be logged in to complete an order.'});
+  kb.push({k:['track','my order','order status'], a:'You can view your order status under "My Account" once logged in.'});
+  kb.push({k:['consult','consultation','doctor','book doctor','appointment','book a doctor'], a:'You can book an online consultation with one of our licensed doctors from the "Consultation" menu. After booking, you can chat with your doctor in real time and receive prescriptions.'});
+  kb.push({k:['account','sign up','register','login','sign in'], a:'Tap "My Account" in the menu to sign up or log in. An account is needed to place orders or book consultations.'});
+  kb.push({k:['contact','phone number','whatsapp number','email','address','location','call'], a:`You can reach us on WhatsApp/Call: ${siteSettings.contactPhone}, email ${siteSettings.contactEmail}, or find us at ${siteSettings.contactAddress}.`});
+  kb.push({k:['about','who are you','company','what is med whole'], a: siteSettings.aboutText});
+  kb.push({k:['category','categories','what do you sell','what products','services'], a:`We offer: ${allCategories.map(c=>c.name).join(', ') || 'several categories'}. Visit the Shop page to browse each one.`});
+  kb.push({k:['stock','out of stock','available','availability'], a:'Each product page shows whether an item is in stock. Ask me about a specific product by name and I can check for you.'});
+  kb.push({k:['refund','return','cancel order'], a:'For refunds, cancellations or order issues, please reach us directly on WhatsApp or use "Talk to a Human" below so our team can assist you.'});
+  allCategories.forEach(c=> kb.push({k:[c.name.toLowerCase(), ...c.name.toLowerCase().split(/\s+/)], a:`${c.name}: ${c.description||'Browse this category in our Shop.'}`}));
+  allFaqs.forEach(f=> kb.push({k: (f.question||'').toLowerCase().split(/\W+/).filter(w=>w.length>2), a: f.answer}));
+  return kb;
+}
+function mwBestReply(query){
+  const q = query.toLowerCase();
+  const qWords = q.split(/\W+/).filter(w=>w.length>2);
+  const prod = allProducts.find(p=> p.name && q.includes(p.name.toLowerCase()));
+  if(prod){
+    const priceTxt = prod.discountPrice ? `${money(prod.discountPrice)} (was ${money(prod.price)})` : money(prod.price);
+    const stockTxt = (prod.stockQty ?? 0) > 0 ? 'It is currently in stock.' : 'It is currently out of stock.';
+    return `${prod.name} — ${priceTxt}. ${stockTxt} ${prod.description||''}`.trim();
+  }
+  const doc = allDoctors.find(d=> d.name && q.includes(d.name.toLowerCase()));
+  if(doc) return `Dr. ${doc.name}${doc.specialty ? ` (${doc.specialty})` : ''} — ${doc.description||'available for consultation.'} You can book via the "Consultation" menu.`;
+  let best=null, bestScore=0;
+  mwBuildKnowledgeBase().forEach(entry=>{
+    let score=0;
+    entry.k.forEach(kw=>{ if(kw && q.includes(kw)) score+=2; });
+    qWords.forEach(w=>{ if(entry.k.some(kw=> kw && kw.includes(w))) score+=1; });
+    if(score>bestScore){ bestScore=score; best=entry.a; }
+  });
+  if(bestScore>=2 && best) return best;
+  return "I'm not fully sure about that one yet — but I can help with products, prices, delivery, orders, consultations or contact info. You can also ask about a specific product or doctor by name, or tap \"Talk to a Human\" for more help.";
+}
+function mwToggle(open){
+  mwChatOpen = open !== undefined ? open : !mwChatOpen;
+  $('mwChatPanel').classList.toggle('open', mwChatOpen);
+  if(mwChatOpen){
+    mwRenderMessages();
+    if(mwEscalated) mwListenSupportChat();
+  }
+}
+function mwEscalate(){
+  if(mwEscalated) return;
+  mwEscalated = true;
+  mwSaveState();
+  mwAddMessage('bot', "Connecting you to our support team \u2014 they'll reply right here. You can also reach us anytime on WhatsApp.");
+  db.collection('supportChats').doc(mwChatSessionId).set({
+    status:'escalated',
+    name: currentUserData?.name || 'Website Visitor',
+    email: currentUserData?.email || '',
+    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+    updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+    messages: mwChatMessages.filter(m=>m.sender!=='admin').map(m=>({sender: m.sender==='user'?'customer':'bot', text:m.text, ts: Date.now()}))
+  }, {merge:true}).then(()=> mwListenSupportChat()).catch(err=> toast(err.message));
+}
+function mwListenSupportChat(){
+  if(mwSupportUnsub) return;
+  mwSupportUnsub = db.collection('supportChats').doc(mwChatSessionId).onSnapshot(doc=>{
+    if(!doc.exists) return;
+    const serverMsgs = doc.data().messages || [];
+    serverMsgs.filter(m=>m.sender==='admin').forEach(am=>{
+      const already = mwChatMessages.some(m=> m.sender==='admin' && m.text===am.text);
+      if(!already) mwAddMessage('admin', am.text);
+    });
+  }, ()=>{});
+}
+function mwSend(){
+  const input = $('mwChatInput');
+  const val = input.value.trim();
+  if(!val) return;
+  input.value = '';
+  mwAddMessage('user', val);
+  if(mwEscalated){
+    db.collection('supportChats').doc(mwChatSessionId).set({
+      status:'escalated', updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+      messages: firebase.firestore.FieldValue.arrayUnion({sender:'customer', text: val, ts: Date.now()})
+    }, {merge:true}).catch(err=> toast(err.message));
+    return;
+  }
+  setTimeout(()=>{
+    mwBotReplyCount++;
+    const reply = mwBestReply(val);
+    mwAddMessage('bot', reply, mwBotReplyCount >= 4);
+    mwSaveState();
+  }, 350);
+}
+function mwInitWidget(){
+  $('mwChatFab').addEventListener('click', ()=> mwToggle());
+  $('mwChatClose').addEventListener('click', ()=> mwToggle(false));
+  $('mwChatSend').addEventListener('click', mwSend);
+  $('mwChatInput').addEventListener('keypress', e=>{ if(e.key==='Enter') mwSend(); });
+  delegate('mwChatPanel', '[data-mw-human]', 'click', ()=> mwEscalate());
+  if(mwEscalated) mwListenSupportChat();
+}
+
+/* --- ADMIN: LIVE CHAT (human handoff for AI widget) --- */
+async function adminSupportChats(c){
+  c.innerHTML = `<div class="loading">Loading conversations...</div>`;
+  const snap = await db.collection('supportChats').orderBy('updatedAt','desc').limit(50).get().catch(()=>null);
+  let list = [];
+  if(snap) snap.forEach(d=> list.push({id:d.id, ...d.data()}));
+  if(!list.length){ c.innerHTML = `<div class="empty-state">No live chat conversations yet. Visitor chats that request a human will appear here.</div>`; return; }
+  c.innerHTML = `<div class="table-wrap"><table><thead><tr><th>Visitor</th><th>Status</th><th>Last Update</th><th>Actions</th></tr></thead>
+    <tbody>${list.map(s=>`
+      <tr data-id="${s.id}">
+        <td>${escapeHtml(s.name||'Website Visitor')}${s.email?`<br><span style="font-size:11px;color:var(--muted);">${escapeHtml(s.email)}</span>`:''}</td>
+        <td>${s.status==='resolved' ? '<span class="stock-in">Resolved</span>' : '<span class="stock-out">Needs Reply</span>'}</td>
+        <td>${fmtDate(s.updatedAt)}</td>
+        <td><button class="btn btn-sm btn-ghost" data-open-chat>Open</button></td>
+      </tr>`).join('')}</tbody></table></div>`;
+  delegate('adminTabContent','[data-open-chat]','click', el=> openAdminSupportChat(el.closest('tr').dataset.id, list));
+}
+let adminSupportUnsub = null;
+function openAdminSupportChat(id, list){
+  const s = list.find(x=>x.id===id) || {};
+  const overlay = document.createElement('div');
+  overlay.className='modal-overlay';
+  overlay.innerHTML = `<div class="modal-box">
+    <button class="modal-close" data-close>&times;</button>
+    <h3>Chat with ${escapeHtml(s.name||'Website Visitor')}</h3>
+    <div class="chat-wrap" style="height:50vh;margin-top:12px;">
+      <div class="chat-msgs" id="adminChatMsgs"><div class="loading">Loading...</div></div>
+      <div class="chat-input">
+        <input type="text" id="adminChatText" placeholder="Reply to visitor...">
+        <button id="adminChatSendBtn">\u27a4</button>
+      </div>
+    </div>
+    <button class="btn btn-sm btn-ghost btn-block" id="adminResolveBtn" style="margin-top:10px;">Mark Resolved</button>
+  </div>`;
+  document.body.appendChild(overlay);
+  overlay.addEventListener('click', e=>{
+    if(e.target===overlay || e.target.closest('[data-close]')){
+      if(adminSupportUnsub){ adminSupportUnsub(); adminSupportUnsub=null; }
+      overlay.remove();
+    }
+  });
+  if(adminSupportUnsub) adminSupportUnsub();
+  adminSupportUnsub = db.collection('supportChats').doc(id).onSnapshot(doc=>{
+    const data = doc.data() || {};
+    const msgs = data.messages || [];
+    const box = overlay.querySelector('#adminChatMsgs');
+    if(!box) return;
+    box.innerHTML = msgs.length ? msgs.map(m=>`
+      <div class="msg ${m.sender==='admin'?'me':'them'}">${escapeHtml(m.text)}
+        <span class="time">${m.sender==='admin'?'You':(m.sender==='customer'?'Visitor':'Assistant')}</span>
+      </div>`).join('') : `<div class="empty-state">No messages yet.</div>`;
+    box.scrollTop = box.scrollHeight;
+  });
+  const sendReply = ()=>{
+    const val = overlay.querySelector('#adminChatText').value.trim();
+    if(!val) return;
+    overlay.querySelector('#adminChatText').value = '';
+    db.collection('supportChats').doc(id).set({
+      status:'escalated', updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+      messages: firebase.firestore.FieldValue.arrayUnion({sender:'admin', text: val, ts: Date.now()})
+    }, {merge:true}).catch(err=> toast(err.message));
+  };
+  overlay.querySelector('#adminChatSendBtn').addEventListener('click', sendReply);
+  overlay.querySelector('#adminChatText').addEventListener('keypress', e=>{ if(e.key==='Enter') sendReply(); });
+  overlay.querySelector('#adminResolveBtn').addEventListener('click', async ()=>{
+    await db.collection('supportChats').doc(id).set({status:'resolved', updatedAt: firebase.firestore.FieldValue.serverTimestamp()}, {merge:true});
+    toast('Marked resolved'); if(adminSupportUnsub){ adminSupportUnsub(); adminSupportUnsub=null; } overlay.remove();
+    adminSupportChats($('adminTabContent'));
+  });
+}
+
 /* ================= INIT ================= */
 async function init(){
   updateCartBadge();
   await Promise.all([loadProducts(), loadCategories(), loadDoctors(), loadFaqs(), loadSettings()]);
+  mwInitWidget();
   navigate('home');
 }
 init();
