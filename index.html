@@ -168,6 +168,9 @@ table th, table td{padding:10px 8px; border-bottom:1px solid var(--border); text
 .chat-input input[type=text]{flex:1; padding:10px 14px; border-radius:999px; border:1px solid var(--border);}
 .chat-input button{width:40px; height:40px; border-radius:50%; background:var(--primary); color:#fff;}
 .chat-input label{width:40px; height:40px; border-radius:50%; background:#eef7f5; display:flex; align-items:center; justify-content:center; font-size:18px;}
+.chat-input .mic-btn{width:40px; height:40px; border-radius:50%; background:#eef7f5; color:var(--text); font-size:16px; flex-shrink:0;}
+.chat-input .mic-btn.recording{background:#e03131; color:#fff; animation:mwPulse 1s infinite;}
+@keyframes mwPulse{0%{box-shadow:0 0 0 0 rgba(224,49,49,.5);}70%{box-shadow:0 0 0 8px rgba(224,49,49,0);}100%{box-shadow:0 0 0 0 rgba(224,49,49,0);}}
 
 .empty-state{text-align:center; padding:40px 16px; color:var(--muted);}
 .loading{text-align:center; padding:30px; color:var(--muted); font-size:13px;}
@@ -1067,8 +1070,14 @@ function renderBookConsult(preselectDoc){
           <div class="form-group"><label>Select Doctor</label>
             <select id="bcDoctor" required>${allDoctors.filter(d=>d.active!==false).map(d=>`<option value="${d.id}" ${preselectDoc===d.id?'selected':''}>${escapeHtml(d.name)} - ${escapeHtml(d.specialty||'')}</option>`).join('')}</select>
           </div>
-          <div class="form-group"><label>Consultation Type</label>
-            <select id="bcType" required><option value="Chat">Chat</option><option value="Voice">Voice Consultation</option><option value="Image">Image Consultation</option></select>
+          <div class="form-group"><label>How would you like to consult?</label>
+            <select id="bcMethod" required>
+              <option value="inapp">In-App Consultation (chat, voice notes &amp; photos)</option>
+              <option value="whatsapp">WhatsApp Consultation (talk directly on WhatsApp)</option>
+            </select>
+          </div>
+          <div class="form-group"><label>What do you need?</label>
+            <select id="bcType" required><option value="Chat">Chat</option><option value="Voice">Voice</option><option value="Image">Image / Photo review</option></select>
           </div>
           <div class="form-group"><label>Preferred Date/Time</label><input type="datetime-local" id="bcDate" required></div>
           <div class="form-group"><label>Describe Your Issue</label><textarea id="bcIssue" required placeholder="Briefly explain your health concern..."></textarea></div>
@@ -1079,10 +1088,34 @@ function renderBookConsult(preselectDoc){
   $('bookForm').addEventListener('submit', async e=>{
     e.preventDefault();
     if(!allDoctors.length){ toast('No doctors available'); return; }
+    const doctor = allDoctors.find(d=>d.id===$('bcDoctor').value);
+    const method = $('bcMethod').value;
+    const type = $('bcType').value;
+    const preferredDate = $('bcDate').value;
+    const issue = $('bcIssue').value;
+
+    if(method==='whatsapp'){
+      if(!doctor?.whatsapp){ toast(`${doctor?.name||'This doctor'} hasn't set up WhatsApp consultations yet. Please choose In-App instead.`); return; }
+      try{
+        await db.collection('consultations').add({
+          userId: currentUser.uid, patientName: currentUserData?.name||'', doctorId: doctor.id,
+          type, method:'whatsapp', preferredDate, issue,
+          status:'Sent to WhatsApp', notes:'', createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        mwStatIncrement({totalConsultations:1});
+      }catch(err){ /* non-fatal - still route them to WhatsApp */ }
+      const phone = doctor.whatsapp.replace(/^0/,'').replace(/\D/g,'');
+      const text = `Hi Dr. ${doctor.name}, I'd like a ${type} consultation via Med Whole.\n\nConcern: ${issue}\nPreferred time: ${preferredDate}\n\n- ${currentUserData?.name||'A patient'}`;
+      window.open(`https://wa.me/234${phone}?text=${encodeURIComponent(text)}`, '_blank');
+      toast('Opening WhatsApp...');
+      navigate('home');
+      return;
+    }
+
     try{
       const ref = await db.collection('consultations').add({
-        userId: currentUser.uid, patientName: currentUserData?.name||'', doctorId: $('bcDoctor').value,
-        type: $('bcType').value, preferredDate: $('bcDate').value, issue: $('bcIssue').value,
+        userId: currentUser.uid, patientName: currentUserData?.name||'', doctorId: doctor.id,
+        type, method:'inapp', preferredDate, issue,
         status:'Pending', notes:'', createdAt: firebase.firestore.FieldValue.serverTimestamp()
       });
       mwStatIncrement({totalConsultations:1, activeConsultations:1});
@@ -1104,6 +1137,7 @@ function renderConsultChat(consultId){
         <div class="chat-msgs" id="chatMsgs"><div class="loading">Loading messages...</div></div>
         <div class="chat-input">
           <label for="chatImgInput">📎<input type="file" id="chatImgInput" accept="image/*" class="hidden"></label>
+          <button type="button" class="mic-btn" id="chatMicBtn" title="Record a voice note">🎤</button>
           <input type="text" id="chatText" placeholder="Type a message...">
           <button id="chatSendBtn">➤</button>
         </div>
@@ -1119,8 +1153,9 @@ function renderConsultChat(consultId){
       <div class="msg ${m.sender==='customer'?'me':'them'}">
         ${m.message?escapeHtml(m.message):''}
         ${m.imageData?`<img src="${m.imageData}">`:''}
+        ${m.audioData?`<audio controls src="${m.audioData}" style="max-width:220px;"></audio>`:''}
         <span class="time">${escapeHtml(m.senderName||'')} - ${fmtDate(m.createdAt)}</span>
-      </div>`).join('') : `<div class="empty-state">No messages yet. Say hello!</div>`;
+      </div>`).join('') : `<div class="empty-state">No messages yet. Say hello, send a photo, or record a voice note!</div>`;
     box.scrollTop = box.scrollHeight;
   }, err=> toast('Chat error: '+err.message));
 
@@ -1135,6 +1170,44 @@ function renderConsultChat(consultId){
         imageData: dataUrl, createdAt: firebase.firestore.FieldValue.serverTimestamp()
       });
     });
+  });
+  wireVoiceNoteButton('chatMicBtn', activeChatConsultationId, 'customer');
+}
+
+/* ---- Voice note recording (shared by in-app consultation chat) ---- */
+let mwRecorder = null, mwRecordChunks = [], mwRecordTimer = null;
+function wireVoiceNoteButton(btnId, consultationId, senderRole){
+  const btn = $(btnId);
+  if(!btn) return;
+  btn.addEventListener('click', async ()=>{
+    if(mwRecorder && mwRecorder.state === 'recording'){ mwRecorder.stop(); return; }
+    if(!navigator.mediaDevices?.getUserMedia){ toast('Voice notes are not supported on this browser'); return; }
+    try{
+      const stream = await navigator.mediaDevices.getUserMedia({audio:true});
+      mwRecordChunks = [];
+      mwRecorder = new MediaRecorder(stream);
+      mwRecorder.ondataavailable = e=>{ if(e.data.size>0) mwRecordChunks.push(e.data); };
+      mwRecorder.onstop = ()=>{
+        clearTimeout(mwRecordTimer);
+        btn.classList.remove('recording');
+        stream.getTracks().forEach(t=>t.stop());
+        const blob = new Blob(mwRecordChunks, {type:'audio/webm'});
+        if(blob.size < 500){ return; } // ignore accidental taps
+        const reader = new FileReader();
+        reader.onload = ()=>{
+          db.collection('messages').add({
+            consultationId, sender: senderRole,
+            senderName: senderRole==='customer' ? (currentUserData?.name||'You') : 'Doctor',
+            audioData: reader.result, createdAt: firebase.firestore.FieldValue.serverTimestamp()
+          }).catch(err=> toast(err.message));
+        };
+        reader.readAsDataURL(blob);
+      };
+      mwRecorder.start();
+      btn.classList.add('recording');
+      toast('Recording... tap again to send (max 30s)');
+      mwRecordTimer = setTimeout(()=>{ if(mwRecorder && mwRecorder.state==='recording') mwRecorder.stop(); }, 30000);
+    }catch(err){ toast('Microphone access denied'); }
   });
 }
 function sendChatMessage(){
@@ -1414,11 +1487,13 @@ async function adminDoctors(c){
   await loadDoctors();
   c.innerHTML = `
     <button class="btn btn-primary btn-sm" id="addDocBtn" style="margin-bottom:14px;">+ Add Doctor</button>
-    <div class="table-wrap"><table><thead><tr><th>Photo</th><th>Name</th><th>Specialty</th><th>Active</th><th>Actions</th></tr></thead>
+    <div class="table-wrap"><table><thead><tr><th>Photo</th><th>Name</th><th>Specialty</th><th>WhatsApp</th><th>Active</th><th>Actions</th></tr></thead>
     <tbody>${allDoctors.map(d=>`
       <tr data-id="${d.id}">
         <td><img src="${escapeHtml(d.imageUrl||'')}" style="width:36px;height:36px;border-radius:50%;object-fit:cover;" onerror="this.src='https://placehold.co/36'"></td>
-        <td>${escapeHtml(d.name)}</td><td>${escapeHtml(d.specialty||'')}</td><td>${d.active!==false?'Yes':'No'}</td>
+        <td>${escapeHtml(d.name)}</td><td>${escapeHtml(d.specialty||'')}</td>
+        <td>${d.whatsapp ? escapeHtml(d.whatsapp) : '<span style="color:var(--muted);">Not set</span>'}</td>
+        <td>${d.active!==false?'Yes':'No'}</td>
         <td><button class="btn btn-sm btn-ghost" data-edit>Edit</button> <button class="btn btn-sm btn-danger" data-del>Del</button></td>
       </tr>`).join('')}</tbody></table></div>`;
   $('addDocBtn').addEventListener('click', ()=> openDoctorForm());
@@ -1438,6 +1513,7 @@ function openDoctorForm(id){
     <form id="docForm" style="margin-top:12px;">
       <div class="form-group"><label>Name</label><input required id="dfName" value="${escapeHtml(d.name||'')}"></div>
       <div class="form-group"><label>Specialty</label><input id="dfSpec" value="${escapeHtml(d.specialty||'')}"></div>
+      <div class="form-group"><label>WhatsApp Number (for WhatsApp consultations, e.g. 08012345678)</label><input id="dfWhatsapp" value="${escapeHtml(d.whatsapp||'')}"></div>
       <div class="form-group"><label>Description</label><textarea id="dfDesc">${escapeHtml(d.description||'')}</textarea></div>
       <div class="form-group"><label>Profile Image URL</label><input id="dfImg" value="${escapeHtml(d.imageUrl||'')}"></div>
       <div class="form-group"><label><input type="checkbox" id="dfActive" ${d.active!==false?'checked':''}> Active</label></div>
@@ -1447,7 +1523,7 @@ function openDoctorForm(id){
   overlay.addEventListener('click', e=>{ if(e.target===overlay || e.target.closest('[data-close]')) overlay.remove(); });
   overlay.querySelector('#docForm').addEventListener('submit', async e=>{
     e.preventDefault();
-    const data = { name:$('dfName').value, specialty:$('dfSpec').value, description:$('dfDesc').value, imageUrl:$('dfImg').value, active:$('dfActive').checked };
+    const data = { name:$('dfName').value, specialty:$('dfSpec').value, whatsapp:$('dfWhatsapp').value.trim(), description:$('dfDesc').value, imageUrl:$('dfImg').value, active:$('dfActive').checked };
     try{
       if(id) await db.collection('doctors').doc(id).update(data);
       else await db.collection('doctors').add(data);
@@ -1461,15 +1537,16 @@ async function adminConsultations(c){
   const snap = await db.collection('consultations').get();
   let list = []; snap.forEach(d=>list.push({id:d.id,...d.data()}));
   list.sort((a,b)=>(b.createdAt?.seconds||0)-(a.createdAt?.seconds||0));
-  c.innerHTML = `<div class="table-wrap"><table><thead><tr><th>Patient</th><th>Doctor</th><th>Type</th><th>Status</th><th>Actions</th></tr></thead>
+  c.innerHTML = `<div class="table-wrap"><table><thead><tr><th>Patient</th><th>Doctor</th><th>Type</th><th>Method</th><th>Status</th><th>Actions</th></tr></thead>
     <tbody>${list.map(cn=>{
       const doc = allDoctors.find(d=>d.id===cn.doctorId);
       return `<tr data-id="${cn.id}">
         <td>${escapeHtml(cn.patientName||'')}</td><td>${escapeHtml(doc?doc.name:'-')}</td><td>${escapeHtml(cn.type)}</td>
+        <td>${cn.method==='whatsapp' ? '<span style="color:#25d366;font-weight:600;">WhatsApp</span>' : 'In-App'}</td>
         <td><select data-status>${['Pending','Accepted','Completed','Cancelled'].map(s=>`<option ${cn.status===s?'selected':''}>${s}</option>`).join('')}</select></td>
         <td><button class="btn btn-sm btn-ghost" data-chat>Chat</button> <button class="btn btn-sm btn-ghost" data-notes>Notes</button> <button class="btn btn-sm btn-primary" data-presc>Prescribe</button></td>
       </tr>`;
-    }).join('') || '<tr><td colspan="5">No consultations yet.</td></tr>'}</tbody></table></div>`;
+    }).join('') || '<tr><td colspan="6">No consultations yet.</td></tr>'}</tbody></table></div>`;
   delegate('adminTabContent','[data-status]','change', async el=>{
     const id = el.closest('tr').dataset.id;
     const cn = list.find(c=>c.id===id);
@@ -1495,6 +1572,7 @@ function openAdminChat(consultId){
       <div class="chat-msgs" id="adminChatMsgs"></div>
       <div class="chat-input">
         <label>📎<input type="file" id="adminChatImg" accept="image/*" class="hidden"></label>
+        <button type="button" class="mic-btn" id="adminChatMic" title="Record a voice note">🎤</button>
         <input type="text" id="adminChatText" placeholder="Type a message...">
         <button id="adminChatSend">➤</button>
       </div>
@@ -1505,7 +1583,7 @@ function openAdminChat(consultId){
     let msgs=[]; snap.forEach(d=>msgs.push({id:d.id,...d.data()}));
     msgs.sort((a,b)=>(a.createdAt?.seconds||0)-(b.createdAt?.seconds||0));
     const box = overlay.querySelector('#adminChatMsgs');
-    box.innerHTML = msgs.map(m=>`<div class="msg ${m.sender==='doctor'?'me':'them'}">${m.message?escapeHtml(m.message):''}${m.imageData?`<img src="${m.imageData}">`:''}<span class="time">${escapeHtml(m.senderName||'')} - ${fmtDate(m.createdAt)}</span></div>`).join('');
+    box.innerHTML = msgs.map(m=>`<div class="msg ${m.sender==='doctor'?'me':'them'}">${m.message?escapeHtml(m.message):''}${m.imageData?`<img src="${m.imageData}">`:''}${m.audioData?`<audio controls src="${m.audioData}" style="max-width:220px;"></audio>`:''}<span class="time">${escapeHtml(m.senderName||'')} - ${fmtDate(m.createdAt)}</span></div>`).join('');
     box.scrollTop = box.scrollHeight;
   });
   overlay.querySelector('#adminChatSend').addEventListener('click', ()=>{
@@ -1520,6 +1598,7 @@ function openAdminChat(consultId){
       db.collection('messages').add({consultationId:consultId, sender:'doctor', senderName: currentUserData?.name||'Doctor', imageData:dataUrl, createdAt: firebase.firestore.FieldValue.serverTimestamp()});
     });
   });
+  wireVoiceNoteButton('adminChatMic', consultId, 'doctor');
 }
 function openAdminNotes(consultId, list){
   const cn = list.find(c=>c.id===consultId);
