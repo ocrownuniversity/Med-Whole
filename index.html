@@ -161,6 +161,9 @@ footer a{color:#5eead4; font-weight:600;}
 .form-group label{display:block; font-size:13px; font-weight:600; margin-bottom:6px; color:var(--text);}
 .form-group input, .form-group select, .form-group textarea{width:100%; padding:11px 14px; border-radius:10px; border:1px solid var(--border); font-size:14px; font-family:inherit;}
 .form-group textarea{resize:vertical; min-height:80px;}
+.password-field{position:relative;}
+.password-field input{padding-right:42px;}
+.pw-toggle{position:absolute; right:4px; top:50%; transform:translateY(-50%); background:none; font-size:17px; padding:6px 8px; line-height:1; color:var(--muted);}
 .auth-box{max-width:420px; margin:30px auto; background:var(--card); border-radius:var(--radius); box-shadow:var(--shadow); padding:26px;}
 .auth-box h2{text-align:center; margin-bottom:18px; color:var(--primary-dark);}
 .switch-link{text-align:center; font-size:13px; margin-top:14px; color:var(--muted);}
@@ -262,6 +265,7 @@ table th, table td{padding:10px 8px; border-bottom:1px solid var(--border); text
       <a href="#" data-nav="account">My Account</a>
       <a href="#" id="navChatLink">💬 Chat with Us</a>
       <a href="#" data-nav="admin" id="adminNavLink" class="hidden">Admin</a>
+      <a href="#" id="logoutNavLink" class="hidden">Logout</a>
     </nav>
     <div class="nav-icons">
       <button class="icon-btn" data-nav="cart">🛒<span class="badge hidden" id="cartBadge">0</span></button>
@@ -353,6 +357,26 @@ function toast(msg){
   setTimeout(()=>t.remove(), 2800);
 }
 function money(n){ return '₦' + Number(n||0).toLocaleString('en-NG'); }
+function pwFieldHtml(id, label, opts){
+  opts = opts || {};
+  return `<div class="form-group"><label>${label}</label>
+    <div class="password-field">
+      <input required type="password" ${opts.minlength?`minlength="${opts.minlength}"`:''} id="${id}">
+      <button type="button" class="pw-toggle" data-toggle="${id}" aria-label="Show password">👁️</button>
+    </div>
+  </div>`;
+}
+function wirePasswordToggles(containerId){
+  $(containerId).querySelectorAll('.pw-toggle').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const inp = $(btn.dataset.toggle);
+      if(!inp) return;
+      const showing = inp.type === 'text';
+      inp.type = showing ? 'password' : 'text';
+      btn.textContent = showing ? '👁️' : '🙈';
+    });
+  });
+}
 function fmtDate(ts){
   if(!ts) return '-';
   let d = ts.toDate ? ts.toDate() : new Date(ts);
@@ -481,6 +505,13 @@ document.addEventListener('click', e=>{
   if(nav){ e.preventDefault(); navigate(nav.dataset.nav); }
 });
 $('menuToggle').addEventListener('click', ()=> $('navLinks').classList.toggle('open'));
+$('logoutNavLink').addEventListener('click', async e=>{
+  e.preventDefault();
+  await logoutUser();
+  toast('Logged out');
+  $('navLinks').classList.remove('open');
+  navigate('home');
+});
 $('year').textContent = new Date().getFullYear();
 
 /* ================= AUTH ================= */
@@ -518,6 +549,7 @@ auth.onAuthStateChanged(async user=>{
     currentUserData = null; isAdmin = false;
   }
   $('adminNavLink').classList.toggle('hidden', !isAdmin);
+  $('logoutNavLink').classList.toggle('hidden', !currentUser);
 });
 
 function registerUser(name, email, phone, password){
@@ -1082,12 +1114,13 @@ function renderLogin(){
       <h2>Login</h2>
       <form id="loginForm">
         <div class="form-group"><label>Email</label><input required type="email" id="loginEmail"></div>
-        <div class="form-group"><label>Password</label><input required type="password" id="loginPassword"></div>
+        ${pwFieldHtml('loginPassword', 'Password')}
         <button class="btn btn-primary btn-block" type="submit">Login</button>
       </form>
       <p class="switch-link"><a href="#" id="forgotBtn">Forgot password?</a></p>
       <p class="switch-link">Don't have an account? <a href="#" data-nav="register">Register</a></p>
     </div>`;
+  wirePasswordToggles('views');
   $('loginForm').addEventListener('submit', async e=>{
     e.preventDefault();
     try{
@@ -1113,11 +1146,12 @@ function renderRegister(){
         <div class="form-group"><label>Full Name</label><input required id="regName"></div>
         <div class="form-group"><label>Email</label><input required type="email" id="regEmail"></div>
         <div class="form-group"><label>Phone</label><input required id="regPhone"></div>
-        <div class="form-group"><label>Password</label><input required type="password" minlength="6" id="regPassword"></div>
+        ${pwFieldHtml('regPassword', 'Password', {minlength:6})}
         <button class="btn btn-primary btn-block" type="submit">Register</button>
       </form>
       <p class="switch-link">Already have an account? <a href="#" data-nav="login">Login</a></p>
     </div>`;
+  wirePasswordToggles('views');
   $('regForm').addEventListener('submit', async e=>{
     e.preventDefault();
     try{
