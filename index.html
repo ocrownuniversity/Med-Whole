@@ -1525,13 +1525,15 @@ function renderAdmin(){
       <div class="auth-box">
         <h2>Admin PIN</h2>
         <form id="pinForm">
-          <div class="form-group"><label>Enter Admin PIN</label><input type="password" id="pinInput" required></div>
+          ${pwFieldHtml('pinInput', 'Enter Admin PIN')}
           <button class="btn btn-primary btn-block" type="submit">Unlock</button>
         </form>
       </div>`;
+    wirePasswordToggles('views');
     $('pinForm').addEventListener('submit', e=>{
       e.preventDefault();
-      if($('pinInput').value === ADMIN_PIN){ adminPinVerified = true; renderAdmin(); }
+      const activePin = siteSettings.adminPin || ADMIN_PIN;
+      if($('pinInput').value === activePin){ adminPinVerified = true; renderAdmin(); }
       else toast('Incorrect PIN');
     });
     return;
@@ -2201,7 +2203,17 @@ async function adminSettings(c){
       <div class="form-group"><label>Science Description</label><textarea id="stWrScience">${escapeHtml(siteSettings.wrScienceText)}</textarea></div>
       <button class="btn btn-primary btn-block" type="submit">Save Settings</button>
     </form>
+  </div>
+  <div class="card" style="margin-top:16px;">
+    <h3 style="font-size:15px;margin-bottom:10px;">Change Admin PIN</h3>
+    <form id="pinChangeForm">
+      ${pwFieldHtml('pcCurrent', 'Current PIN')}
+      ${pwFieldHtml('pcNew', 'New PIN', {minlength:4})}
+      ${pwFieldHtml('pcConfirm', 'Confirm New PIN', {minlength:4})}
+      <button class="btn btn-primary btn-block" type="submit">Update PIN</button>
+    </form>
   </div>`;
+  wirePasswordToggles('views');
   $('settingsForm').addEventListener('submit', async e=>{
     e.preventDefault();
     const data = {
@@ -2215,6 +2227,21 @@ async function adminSettings(c){
       siteSettings = {...siteSettings, ...data};
       cacheClear('settings');
       toast('Settings saved');
+    }catch(err){ toast(err.message); }
+  });
+  $('pinChangeForm').addEventListener('submit', async e=>{
+    e.preventDefault();
+    const activePin = siteSettings.adminPin || ADMIN_PIN;
+    const current = $('pcCurrent').value, next = $('pcNew').value, confirm = $('pcConfirm').value;
+    if(current !== activePin){ toast('Current PIN is incorrect'); return; }
+    if(next.length < 4){ toast('New PIN must be at least 4 characters'); return; }
+    if(next !== confirm){ toast('New PIN and confirmation do not match'); return; }
+    try{
+      await db.collection('settings').doc('site').set({adminPin: next}, {merge:true});
+      siteSettings.adminPin = next;
+      cacheClear('settings');
+      toast('Admin PIN updated');
+      e.target.reset();
     }catch(err){ toast(err.message); }
   });
 }
