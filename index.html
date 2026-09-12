@@ -119,6 +119,11 @@ section{padding:40px 16px;}
 .pc-features li::before{content:'\2713  '; color:var(--ok); font-weight:700;}
 .pc-features li.excl{color:var(--muted);}
 .pc-features li.excl::before{content:'\2013  '; color:var(--muted); font-weight:700;}
+.pc-variants{margin:10px 0 4px; padding-top:10px; border-top:1px solid var(--border);}
+.pc-variant-row{display:flex; justify-content:space-between; align-items:center; padding:7px 0; font-size:13px; color:var(--text); border-bottom:1px solid var(--border);}
+.pc-variant-row:last-child{border-bottom:none;}
+.pc-variant-row .vlabel{color:var(--muted);}
+.pc-variant-row .vprice{font-weight:700; color:var(--primary-dark);}
 .btn-accent-outline-sm{background:transparent; border:2px solid var(--accent); color:var(--accent); font-weight:700;}
 .btn-accent-outline-sm:hover{background:var(--accent); color:#fff;}
 .stock-tag{font-size:11px; font-weight:600;}
@@ -824,6 +829,13 @@ function productCardHtml(p){
   const inStock = (p.stockQty===undefined ? true : p.stockQty > 0);
   const priceValue = p.discountPrice || p.price;
   const features = (p.features||'').split('\n').map(f=>f.trim()).filter(Boolean);
+  // Variants: one "Label - Price" per line, e.g. "2.5mg - 500000" -> rendered as its own row, not merged text
+  const variants = (p.variants||'').split('\n').map(v=>v.trim()).filter(Boolean).map(line=>{
+    const m = line.match(/^(.*?)[\s]*[-–:][\s]*₦?\s*([\d,\.]+)\s*(?:k|000)?$/i);
+    if(!m) return {label: line, price: null};
+    let priceStr = m[2].replace(/,/g,'');
+    return {label: m[1].trim(), price: Number(priceStr)};
+  });
   const waDigits = escapeHtml(siteSettings.contactPhone).replace(/^0/,'').replace(/\D/g,'');
   const waMsg = encodeURIComponent(`Hi, I'm interested in ${p.name} (${money(priceValue)}). Please tell me how to get started.`);
   return `
@@ -833,11 +845,13 @@ function productCardHtml(p){
       <span class="cat-tag">${escapeHtml(catName(p.category))}</span>
       <h4 data-view-product="${p.id}">${escapeHtml(p.name)}</h4>
       <div class="price-row">
-        <span class="price-now">${money(priceValue)}</span>
+        <span class="price-now">${variants.length ? 'From '+money(priceValue) : money(priceValue)}</span>
         ${p.discountPrice ? `<span class="price-old">${money(p.price)}</span>` : ''}
       </div>
       ${p.period ? `<div class="pc-period">${escapeHtml(p.period)}</div>` : ''}
       ${p.description ? `<p class="pc-desc">${escapeHtml(p.description)}</p>` : ''}
+      ${variants.length ? `<div class="pc-variants">${variants.map(v=>`
+        <div class="pc-variant-row"><span class="vlabel">${escapeHtml(v.label)}</span><span class="vprice">${v.price!==null ? money(v.price) : ''}</span></div>`).join('')}</div>` : ''}
       ${features.length ? `<ul class="pc-features">${features.map(f=>{
         const excluded = f.startsWith('-');
         return `<li class="${excluded?'excl':''}">${escapeHtml(excluded ? f.slice(1).trim() : f)}</li>`;
@@ -1637,6 +1651,7 @@ function openProductForm(id){
       </div>
       <div class="form-group"><label>Stock Quantity</label><input type="number" id="pfStock" value="${p.stockQty ?? 10}"></div>
       <div class="form-group"><label>Billing Period (optional, e.g. "per 8-week cycle")</label><input id="pfPeriod" value="${escapeHtml(p.period||'')}"></div>
+      <div class="form-group"><label>Price Variants (optional — for multi-price products like Mounjaro doses). One per line, format: Label - Price</label><textarea id="pfVariants" placeholder="e.g. 2.5mg - 500000">${escapeHtml(p.variants||'')}</textarea></div>
       <div class="form-group"><label>Features / What's Included (optional, one per line — start a line with "-" to show it greyed out as not included)</label><textarea id="pfFeatures" placeholder="e.g. Personalized meal plan">${escapeHtml(p.features||'')}</textarea></div>
       <div class="form-group"><label><input type="checkbox" id="pfFeat" ${p.featured?'checked':''}> Featured Product</label></div>
       <div class="form-group"><label><input type="checkbox" id="pfPopular" ${p.popular?'checked':''}> Mark as "Most Popular" (shows badge on card)</label></div>
@@ -1662,7 +1677,7 @@ function openProductForm(id){
       name: $('pfName2').value, category: $('pfCat').value, description: $('pfDesc').value,
       price: Number($('pfPrice').value), discountPrice: $('pfDisc').value ? Number($('pfDisc').value) : null,
       imageUrl: pfImgData, stockQty: Number($('pfStock').value), featured: $('pfFeat').checked,
-      period: $('pfPeriod').value, features: $('pfFeatures').value, popular: $('pfPopular').checked
+      period: $('pfPeriod').value, features: $('pfFeatures').value, variants: $('pfVariants').value, popular: $('pfPopular').checked
     };
     try{
       if(id) await db.collection('products').doc(id).update(data);
