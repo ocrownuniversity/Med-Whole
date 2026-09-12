@@ -1976,15 +1976,39 @@ async function adminPrescriptions(c){
 }
 
 /* --- FAQS --- */
+const SAMPLE_FAQS = [
+  {question:"What is Med Whole Limited?", answer:"Med Whole Limited is a healthcare, wellness and aesthetics company. We bring together The Weight Reset (doctor-led weight management), Med Whole Aesthetics (beauty with confidence) and Med Whole Medical (trusted online doctor consultations and quality medical solutions) under one roof."},
+  {question:"How does the Weight Reset Program work?", answer:"Choose the plan that fits your goals, apply in a couple of minutes, and our team will reach out to you on WhatsApp to complete your onboarding. You'll then be matched with medical support and guided through your program from there."},
+  {question:"Do I need a prescription for medications like Mounjaro?", answer:"Yes. Weight-loss medications require a medical review before they're prescribed. Our program includes medical oversight, so our team will guide you through the necessary checks before you start."},
+  {question:"How do I get started?", answer:"Tap \"Get Started\" or fill in the short \"What's your main goal?\" form on our homepage or the Weight Reset Program page. There's no pressure and no judgment — we'll reach out to you on WhatsApp to complete your onboarding."},
+  {question:"Do you deliver nationwide?", answer:"We deliver to locations across Nigeria. Delivery fees and timelines may vary depending on your location — our team will confirm these details when you place an order."},
+  {question:"How do I book a doctor consultation?", answer:"Go to the Consultation page from the menu, choose a doctor and an available time slot, and book directly. You'll receive confirmation and can join your consultation at the scheduled time."},
+  {question:"What payment methods do you accept?", answer:"We accept bank transfer and card payments. Once you apply or place an order, our team will share the payment details you need."},
+  {question:"Can I stop or pause my program at any time?", answer:"Yes. Our programs are pay-per-cycle with no lock-ins and no hidden fees — you can stop whenever you're ready. Just reach out to our team on WhatsApp."},
+  {question:"Is my information kept confidential?", answer:"Yes. Your personal and medical information is handled confidentially by our licensed medical team and is never shared without your consent."}
+];
 async function adminFaqs(c){
   await loadFaqs();
   c.innerHTML = `
-    <button class="btn btn-primary btn-sm" id="addFaqBtn" style="margin-bottom:14px;">+ Add FAQ</button>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px;">
+      <button class="btn btn-primary btn-sm" id="addFaqBtn">+ Add FAQ</button>
+      <button class="btn btn-outline btn-sm" id="seedFaqBtn">+ Load Sample FAQs</button>
+    </div>
     <div class="table-wrap"><table><thead><tr><th>Question</th><th>Actions</th></tr></thead>
     <tbody>${allFaqs.map(f=>`
       <tr data-id="${f.id}"><td>${escapeHtml(f.question)}</td>
       <td><button class="btn btn-sm btn-ghost" data-edit>Edit</button> <button class="btn btn-sm btn-danger" data-del>Del</button></td></tr>`).join('') || '<tr><td colspan="2">No FAQs yet.</td></tr>'}</tbody></table></div>`;
   $('addFaqBtn').addEventListener('click', ()=> openFaqForm());
+  $('seedFaqBtn').addEventListener('click', async ()=>{
+    if(!confirm('Add '+SAMPLE_FAQS.length+' sample FAQs? You can edit or delete any of them afterwards.')) return;
+    try{
+      let order = allFaqs.length;
+      for(const f of SAMPLE_FAQS){
+        await db.collection('faqs').add({...f, order: order++});
+      }
+      cacheClear('faqs'); toast('Sample FAQs added'); adminFaqs(c);
+    }catch(err){ toast(err.message); }
+  });
   delegate('adminTabContent','[data-edit]','click', el=> openFaqForm(el.closest('tr').dataset.id));
   delegate('adminTabContent','[data-del]','click', async el=>{
     if(!confirm('Delete this FAQ?')) return;
