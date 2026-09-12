@@ -175,8 +175,6 @@ table th, table td{padding:10px 8px; border-bottom:1px solid var(--border); text
 .wa-float{position:fixed; bottom:20px; right:16px; background:#25d366; color:#fff; width:52px; height:52px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:26px; box-shadow:0 6px 16px rgba(0,0,0,.25); z-index:500;}
 
 /* AI CHAT WIDGET */
-.mw-chat-fab{position:fixed; bottom:82px; right:16px; background:var(--primary); color:#fff; width:52px; height:52px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:24px; box-shadow:0 6px 16px rgba(0,0,0,.25); z-index:501; border:none;}
-.mw-chat-fab .mw-dot{position:absolute; top:2px; right:2px; width:12px; height:12px; background:var(--accent); border-radius:50%; border:2px solid #fff;}
 .mw-chat-panel{position:fixed; bottom:0; right:0; left:0; top:0; background:#fff; z-index:1500; display:none; flex-direction:column; box-shadow:-4px 0 24px rgba(0,0,0,.2);}
 .mw-chat-panel.open{display:flex;}
 .mw-chat-head{background:linear-gradient(135deg,#0f3d22,#1a5632); color:#fff; padding:16px; display:flex; align-items:center; justify-content:space-between;}
@@ -220,6 +218,7 @@ table th, table td{padding:10px 8px; border-bottom:1px solid var(--border); text
       <a href="#" data-nav="doctors">Doctors</a>
       <a href="#" data-nav="book-consult">Consultation</a>
       <a href="#" data-nav="account">My Account</a>
+      <a href="#" id="navChatLink">💬 Chat with Us</a>
       <a href="#" data-nav="admin" id="adminNavLink" class="hidden">Admin</a>
     </nav>
     <div class="nav-icons">
@@ -239,7 +238,6 @@ table th, table td{padding:10px 8px; border-bottom:1px solid var(--border); text
 
 <a class="wa-float" href="https://wa.me/2348056911810" target="_blank" title="Chat on WhatsApp">💬</a>
 
-<button class="mw-chat-fab" id="mwChatFab" title="Chat with us">🤖<span class="mw-dot"></span></button>
 <div class="mw-chat-panel" id="mwChatPanel">
   <div class="mw-chat-head">
     <div><h4>Med Whole Assistant</h4><span>Ask about products, orders, delivery &amp; more</span></div>
@@ -449,7 +447,7 @@ function loadProducts(force){
     snap.forEach(d=> allProducts.push({id:d.id, ...d.data()}));
     cacheSet('products', allProducts);
     return allProducts;
-  });
+  }).catch(err=>{ console.error('loadProducts', err); return allProducts; });
 }
 function loadCategories(force){
   if(!force){
@@ -468,7 +466,7 @@ function loadCategories(force){
     }
     cacheSet('categories', allCategories);
     return allCategories;
-  });
+  }).catch(err=>{ console.error('loadCategories', err); return allCategories; });
 }
 function loadDoctors(force){
   if(!force){
@@ -480,7 +478,7 @@ function loadDoctors(force){
     snap.forEach(d=> allDoctors.push({id:d.id, ...d.data()}));
     cacheSet('doctors', allDoctors);
     return allDoctors;
-  });
+  }).catch(err=>{ console.error('loadDoctors', err); return allDoctors; });
 }
 function loadFaqs(force){
   if(!force){
@@ -493,7 +491,7 @@ function loadFaqs(force){
     allFaqs.sort((a,b)=>(a.order||0)-(b.order||0));
     cacheSet('faqs', allFaqs);
     return allFaqs;
-  });
+  }).catch(err=>{ console.error('loadFaqs', err); return allFaqs; });
 }
 function loadTestimonials(force){
   if(!force){
@@ -506,7 +504,7 @@ function loadTestimonials(force){
     allTestimonials.sort((a,b)=>(a.order||0)-(b.order||0));
     cacheSet('testimonials', allTestimonials);
     return allTestimonials;
-  });
+  }).catch(err=>{ console.error('loadTestimonials', err); return allTestimonials; });
 }
 function loadSettings(force){
   if(!force){
@@ -516,7 +514,7 @@ function loadSettings(force){
   return db.collection('settings').doc('site').get().then(doc=>{
     if(doc.exists){ siteSettings = {...siteSettings, ...doc.data()}; cacheSet('settings', doc.data()); }
     return siteSettings;
-  }).catch(()=>siteSettings);
+  }).catch(err=>{ console.error('loadSettings', err); return siteSettings; });
 }
 
 /* ================= HOME ================= */
@@ -1843,7 +1841,11 @@ function mwSend(){
   }, 350);
 }
 function mwInitWidget(){
-  $('mwChatFab').addEventListener('click', ()=> mwToggle());
+  $('navChatLink').addEventListener('click', e=>{
+    e.preventDefault();
+    $('navLinks').classList.remove('open');
+    mwToggle(true);
+  });
   $('mwChatClose').addEventListener('click', ()=> mwToggle(false));
   $('mwChatSend').addEventListener('click', mwSend);
   $('mwChatInput').addEventListener('keypress', e=>{ if(e.key==='Enter') mwSend(); });
@@ -1925,8 +1927,10 @@ function openAdminSupportChat(id, list){
 /* ================= INIT ================= */
 async function init(){
   updateCartBadge();
-  await Promise.all([loadProducts(), loadCategories(), loadDoctors(), loadFaqs(), loadTestimonials(), loadSettings()]);
-  mwInitWidget();
+  mwInitWidget(); // wire the chat button immediately - never blocked by data loading
+  try{
+    await Promise.all([loadProducts(), loadCategories(), loadDoctors(), loadFaqs(), loadTestimonials(), loadSettings()]);
+  }catch(err){ console.error('init data load', err); }
   navigate('home');
 }
 init();
