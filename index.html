@@ -27,6 +27,33 @@ button{font-family:inherit; cursor:pointer; border:none;}
 .btn-primary{background:var(--primary); color:#fff;}
 .btn-primary:hover{background:var(--primary-dark);}
 .btn-outline{background:transparent; border:2px solid var(--primary); color:var(--primary);}
+
+/* WEIGHT RESET PROGRAM PAGE */
+.wr-hero{background:linear-gradient(135deg,#fff0f7,var(--bg)); text-align:center; padding:44px 16px 28px; border-radius:var(--radius); margin-bottom:0;}
+.wr-hero h1{font-size:24px; margin-bottom:10px; line-height:1.3;}
+.wr-hero p{color:var(--muted); font-size:14px; max-width:480px; margin:0 auto 20px;}
+.wr-hero .hero-btns{display:flex; gap:10px; justify-content:center; flex-wrap:wrap;}
+.btn-accent{background:var(--accent); color:#fff; box-shadow:0 6px 16px rgba(230,25,127,.35);}
+.btn-accent-outline{background:transparent; border:2px solid var(--accent); color:var(--accent);}
+.wr-subnav{display:flex; overflow-x:auto; gap:8px; padding:12px 4px; margin-bottom:18px; position:sticky; top:0; background:var(--bg); z-index:60; -webkit-overflow-scrolling:touch;}
+.wr-subnav a{padding:8px 14px; border-radius:999px; background:#fff; box-shadow:var(--shadow); font-size:12.5px; font-weight:600; white-space:nowrap; color:var(--text); flex-shrink:0;}
+.wr-subnav a:hover{color:var(--accent);}
+.wr-section{scroll-margin-top:60px; margin-bottom:40px;}
+.wr-stat-card{background:var(--card); border-radius:var(--radius); box-shadow:var(--shadow); padding:20px 14px; text-align:center;}
+.wr-stat-card .num{font-size:24px; font-weight:800; color:var(--accent);}
+.wr-stat-card .lbl{font-size:11.5px; color:var(--muted); margin-top:4px;}
+.wr-price-card{background:var(--card); border-radius:var(--radius); box-shadow:var(--shadow); padding:22px; text-align:center; border:2px solid transparent;}
+.wr-price-card.highlight{border-color:var(--accent);}
+.wr-price-card .plan-name{font-weight:700; font-size:15px;}
+.wr-price-card .amt{font-size:26px; font-weight:800; margin:8px 0; color:var(--primary-dark);}
+.wr-price-card .amt span{font-size:12px; font-weight:500; color:var(--muted);}
+.wr-price-card ul{list-style:none; text-align:left; margin:14px 0; font-size:12.5px; color:var(--muted);}
+.wr-price-card li{padding:6px 0; border-bottom:1px solid var(--border);}
+.wr-price-card li::before{content:'\2713  '; color:var(--ok); font-weight:700;}
+.wr-program-step{display:flex; gap:14px; align-items:flex-start; margin-bottom:16px;}
+.wr-program-step .step-num{width:34px; height:34px; border-radius:50%; background:var(--accent); color:#fff; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:14px; flex-shrink:0;}
+.wr-program-step h4{font-size:14px; margin-bottom:4px;}
+.wr-program-step p{font-size:12.5px; color:var(--muted);}
 .btn-outline:hover{background:var(--primary); color:#fff;}
 .btn-sm{padding:7px 14px; font-size:12px; border-radius:8px;}
 .btn-danger{background:var(--danger); color:#fff;}
@@ -218,6 +245,7 @@ table th, table td{padding:10px 8px; border-bottom:1px solid var(--border); text
     <nav class="nav-links" id="navLinks">
       <a href="#" data-nav="home">Home</a>
       <a href="#" data-nav="products">Shop</a>
+      <a href="#" data-nav="weight-reset">Weight Reset Program</a>
       <a href="#" data-nav="doctors">Doctors</a>
       <a href="#" data-nav="book-consult">Consultation</a>
       <a href="#" data-nav="account">My Account</a>
@@ -284,13 +312,19 @@ let allCategories = [];
 let allDoctors = [];
 let allFaqs = [];
 let allTestimonials = [];
+let allPricingPlans = [];
+let allResultStats = [];
 let siteSettings = {
   heroTitle: "People. Health. A Brighter Tomorrow.",
   heroSubtitle: "Med Whole Limited brings you The Weight Reset, Med Whole Aesthetics and Med Whole Medical - doctor-led weight management, beauty with confidence, and quality medical solutions, plus trusted online doctor consultations.",
   aboutText: "Med Whole Limited connects you with quality healthcare, wellness and aesthetics products, and licensed doctors, for convenient, professional care from anywhere.",
   contactPhone: "08056911810",
   contactEmail: "info@medwhole.com",
-  contactAddress: "Nigeria"
+  contactAddress: "Nigeria",
+  wrHeroTitle: "Your Journey to Better Health Starts Here",
+  wrHeroSubtitle: "The Weight Reset is our doctor-led program that has helped hundreds of people lose weight sustainably and take back control of their health.",
+  wrProgramText: "The Weight Reset combines medical assessment, a personalised nutrition and lifestyle plan, ongoing doctor support, and progress tracking - built around you, not a generic diet.",
+  wrScienceText: "Our approach is grounded in evidence-based medicine: metabolic assessment, gradual sustainable calorie and habit changes, and regular check-ins with licensed doctors - not fad diets or unsafe shortcuts."
 };
 let activeChatConsultationId = null;
 let chatUnsub = null;
@@ -518,6 +552,32 @@ function loadSettings(force){
     if(doc.exists){ siteSettings = {...siteSettings, ...doc.data()}; cacheSet('settings', doc.data()); }
     return siteSettings;
   }).catch(err=>{ console.error('loadSettings', err); return siteSettings; });
+}
+function loadPricingPlans(force){
+  if(!force){
+    const cached = cacheGet('pricingPlans');
+    if(cached){ allPricingPlans = cached; return Promise.resolve(allPricingPlans); }
+  }
+  return db.collection('pricingPlans').get().then(snap=>{
+    allPricingPlans = [];
+    snap.forEach(d=> allPricingPlans.push({id:d.id, ...d.data()}));
+    allPricingPlans.sort((a,b)=>(a.order||0)-(b.order||0));
+    cacheSet('pricingPlans', allPricingPlans);
+    return allPricingPlans;
+  }).catch(err=>{ console.error('loadPricingPlans', err); return allPricingPlans; });
+}
+function loadResultStats(force){
+  if(!force){
+    const cached = cacheGet('resultStats');
+    if(cached){ allResultStats = cached; return Promise.resolve(allResultStats); }
+  }
+  return db.collection('resultStats').get().then(snap=>{
+    allResultStats = [];
+    snap.forEach(d=> allResultStats.push({id:d.id, ...d.data()}));
+    allResultStats.sort((a,b)=>(a.order||0)-(b.order||0));
+    cacheSet('resultStats', allResultStats);
+    return allResultStats;
+  }).catch(err=>{ console.error('loadResultStats', err); return allResultStats; });
 }
 
 /* ================= HOME ================= */
@@ -1059,6 +1119,132 @@ async function loadAccountTab(tab){
 }
 
 /* ================= BOOK CONSULTATION ================= */
+/* ================= WEIGHT RESET PROGRAM PAGE ================= */
+registerRoute('weight-reset', renderWeightReset);
+function renderWeightReset(){
+  const stats = allResultStats.length ? allResultStats : [
+    {stat:'500+', label:'Lives Transformed'},
+    {stat:'92%', label:'Client Satisfaction'},
+    {stat:'8', label:'Years of Practice'}
+  ];
+  const plans = allPricingPlans;
+  $('views').innerHTML = `
+    <section class="wr-hero wr-section" id="wr-home">
+      <h1>${escapeHtml(siteSettings.wrHeroTitle)}</h1>
+      <p>${escapeHtml(siteSettings.wrHeroSubtitle)}</p>
+      <div class="hero-btns">
+        <a href="#wr-apply" class="btn btn-accent">Apply Now →</a>
+        <a href="#wr-pricing" class="btn btn-accent-outline">See Pricing</a>
+      </div>
+    </section>
+
+    <nav class="wr-subnav">
+      <a href="#wr-home">Home</a>
+      <a href="#wr-program">The Program</a>
+      <a href="#wr-results">Results</a>
+      <a href="#wr-science">Science</a>
+      <a href="#wr-about">About</a>
+      <a href="#wr-contact">Contact</a>
+    </nav>
+
+    <div class="container">
+      <section class="wr-section" id="wr-program">
+        <div class="section-title"><h2>The Program</h2></div>
+        <p style="text-align:center;color:var(--muted);font-size:13.5px;max-width:520px;margin:0 auto 24px;">${escapeHtml(siteSettings.wrProgramText)}</p>
+        <div style="max-width:520px;margin:0 auto;">
+          <div class="wr-program-step"><div class="step-num">1</div><div><h4>Medical Assessment</h4><p>A licensed doctor reviews your health history and goals.</p></div></div>
+          <div class="wr-program-step"><div class="step-num">2</div><div><h4>Personalised Plan</h4><p>A nutrition and lifestyle plan built around your body and routine.</p></div></div>
+          <div class="wr-program-step"><div class="step-num">3</div><div><h4>Ongoing Support</h4><p>Regular check-ins with your doctor via chat, voice or WhatsApp.</p></div></div>
+          <div class="wr-program-step"><div class="step-num">4</div><div><h4>Progress Tracking</h4><p>We monitor your progress and adjust the plan as you go.</p></div></div>
+        </div>
+      </section>
+
+      <section class="wr-section" id="wr-results">
+        <div class="section-title"><h2>Results</h2></div>
+        <div class="grid grid-3" style="margin-bottom:24px;">
+          ${stats.map(s=>`<div class="wr-stat-card"><div class="num">${escapeHtml(s.stat)}</div><div class="lbl">${escapeHtml(s.label)}</div></div>`).join('')}
+        </div>
+        <div class="grid grid-3">
+          ${(allTestimonials.length ? allTestimonials : [{name:'Amaka O.',text:'Ordering was seamless and the delivery was fast. My weight loss journey has never been easier.',rating:5}]).map(t=>`
+            <div class="testi-card">
+              <div style="margin-bottom:6px;">${starsHtml(t.rating||5,13)}</div>
+              <p>"${escapeHtml(t.text)}"</p>
+              <strong>- ${escapeHtml(t.name)}</strong>
+            </div>`).join('')}
+        </div>
+      </section>
+
+      <section class="wr-section" id="wr-science">
+        <div class="section-title"><h2>The Science</h2></div>
+        <p style="text-align:center;color:var(--muted);font-size:13.5px;max-width:520px;margin:0 auto;">${escapeHtml(siteSettings.wrScienceText)}</p>
+      </section>
+
+      <section class="wr-section" id="wr-about">
+        <div class="section-title"><h2>About Us</h2></div>
+        <p style="text-align:center;color:var(--muted);font-size:13.5px;max-width:520px;margin:0 auto;">${escapeHtml(siteSettings.aboutText)}</p>
+      </section>
+
+      <section class="wr-section" id="wr-pricing">
+        <div class="section-title"><h2>Pricing</h2></div>
+        ${plans.length ? `<div class="grid grid-3">${plans.map(p=>`
+          <div class="wr-price-card ${p.highlighted?'highlight':''}">
+            <div class="plan-name">${escapeHtml(p.name)}</div>
+            <div class="amt">${money(p.price)}<span>/${escapeHtml(p.period||'program')}</span></div>
+            <ul>${(p.features||[]).map(f=>`<li>${escapeHtml(f)}</li>`).join('')}</ul>
+            <a href="#wr-apply" class="btn btn-accent btn-block">Apply Now</a>
+          </div>`).join('')}</div>` :
+          `<div class="empty-state">Pricing is being finalised - reach out to us on WhatsApp or apply below and our team will share the current plans with you.</div>`}
+      </section>
+
+      <section class="wr-section" id="wr-contact">
+        <div class="section-title"><h2>Contact</h2></div>
+        <div class="card" style="max-width:420px;margin:0 auto;text-align:center;">
+          <p style="font-size:13.5px;color:var(--muted);margin-bottom:6px;">Call/WhatsApp: <a href="tel:${escapeHtml(siteSettings.contactPhone)}" style="color:var(--primary);font-weight:600;">${escapeHtml(siteSettings.contactPhone)}</a></p>
+          <p style="font-size:13.5px;color:var(--muted);margin-bottom:6px;">Email: <a href="mailto:${escapeHtml(siteSettings.contactEmail)}" style="color:var(--primary);font-weight:600;">${escapeHtml(siteSettings.contactEmail)}</a></p>
+          <p style="font-size:13.5px;color:var(--muted);">${escapeHtml(siteSettings.contactAddress)}</p>
+        </div>
+      </section>
+
+      <section class="wr-section" id="wr-apply">
+        <div class="section-title"><h2>Apply Now</h2></div>
+        <div class="card" style="max-width:480px;margin:0 auto;">
+          <form id="wrApplyForm">
+            <div class="form-group"><label>Full Name</label><input required id="waName" value="${escapeHtml(currentUserData?.name||'')}"></div>
+            <div class="form-group"><label>Email</label><input required type="email" id="waEmail" value="${escapeHtml(currentUserData?.email||'')}"></div>
+            <div class="form-group"><label>Phone</label><input required id="waPhone" value="${escapeHtml(currentUserData?.phone||'')}"></div>
+            <div class="form-group"><label>Current Weight (kg, optional)</label><input type="number" id="waCurrentWeight"></div>
+            <div class="form-group"><label>Goal Weight (kg, optional)</label><input type="number" id="waTargetWeight"></div>
+            <div class="form-group"><label>Tell us about your goals</label><textarea id="waMessage" placeholder="What would you like to achieve?"></textarea></div>
+            <button class="btn btn-accent btn-block" type="submit">Submit Application</button>
+          </form>
+        </div>
+      </section>
+
+      <div style="text-align:center;margin:30px 0 10px;display:flex;gap:22px;justify-content:center;">
+        <a href="#" data-nav="admin" style="font-size:13px;color:var(--muted);font-weight:600;">🔒 Admin Login</a>
+        <a href="#" data-nav="account" style="font-size:13px;color:var(--muted);font-weight:600;">👤 Client Login</a>
+      </div>
+    </div>`;
+
+  $('wrApplyForm').addEventListener('submit', async e=>{
+    e.preventDefault();
+    const btn = e.target.querySelector('button[type=submit]');
+    btn.disabled = true; btn.textContent = 'Submitting...';
+    try{
+      await db.collection('programApplications').add({
+        name: $('waName').value, email: $('waEmail').value, phone: $('waPhone').value,
+        currentWeight: $('waCurrentWeight').value ? Number($('waCurrentWeight').value) : null,
+        targetWeight: $('waTargetWeight').value ? Number($('waTargetWeight').value) : null,
+        message: $('waMessage').value, userId: currentUser?.uid || null,
+        status:'New', createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+      toast("Application submitted! We'll reach out to you soon.");
+      e.target.reset();
+    }catch(err){ toast(err.message); }
+    finally{ btn.disabled = false; btn.textContent = 'Submit Application'; }
+  });
+}
+
 registerRoute('book-consult', renderBookConsult);
 function renderBookConsult(preselectDoc){
   if(!currentUser){ toast('Please login to book a consultation'); navigate('login'); return; }
@@ -1255,6 +1441,9 @@ function renderAdmin(){
         <button class="tab-btn" data-at="prescriptions">Prescriptions</button>
         <button class="tab-btn" data-at="faqs">FAQs</button>
         <button class="tab-btn" data-at="testimonials">Testimonials</button>
+        <button class="tab-btn" data-at="pricing">Pricing Plans</button>
+        <button class="tab-btn" data-at="programStats">Program Stats</button>
+        <button class="tab-btn" data-at="applications">Applications</button>
         <button class="tab-btn" data-at="supportChats">Live Chat</button>
         <button class="tab-btn" data-at="settings">Site Settings</button>
       </div>
@@ -1281,6 +1470,9 @@ async function loadAdminTab(tab){
   if(tab==='prescriptions') return adminPrescriptions(c);
   if(tab==='faqs') return adminFaqs(c);
   if(tab==='testimonials') return adminTestimonials(c);
+  if(tab==='pricing') return adminPricing(c);
+  if(tab==='programStats') return adminProgramStats(c);
+  if(tab==='applications') return adminApplications(c);
   if(tab==='supportChats') return adminSupportChats(c);
   if(tab==='settings') return adminSettings(c);
 }
@@ -1755,6 +1947,122 @@ function openTestimonialForm(id){
   });
 }
 
+/* --- PRICING PLANS (Weight Reset program) --- */
+async function adminPricing(c){
+  await loadPricingPlans();
+  c.innerHTML = `
+    <button class="btn btn-primary btn-sm" id="addPlanBtn" style="margin-bottom:14px;">+ Add Plan</button>
+    <div class="table-wrap"><table><thead><tr><th>Plan</th><th>Price</th><th>Highlighted</th><th>Actions</th></tr></thead>
+    <tbody>${allPricingPlans.map(p=>`
+      <tr data-id="${p.id}">
+        <td>${escapeHtml(p.name)}</td><td>${money(p.price)}/${escapeHtml(p.period||'program')}</td>
+        <td>${p.highlighted?'Yes':'No'}</td>
+        <td><button class="btn btn-sm btn-ghost" data-edit>Edit</button> <button class="btn btn-sm btn-danger" data-del>Del</button></td>
+      </tr>`).join('') || '<tr><td colspan="4">No pricing plans yet. The Weight Reset page will show a "contact us" message until you add some.</td></tr>'}</tbody></table></div>`;
+  $('addPlanBtn').addEventListener('click', ()=> openPlanForm());
+  delegate('adminTabContent','[data-edit]','click', el=> openPlanForm(el.closest('tr').dataset.id));
+  delegate('adminTabContent','[data-del]','click', async el=>{
+    if(!confirm('Delete this plan?')) return;
+    await db.collection('pricingPlans').doc(el.closest('tr').dataset.id).delete();
+    cacheClear('pricingPlans'); toast('Deleted'); adminPricing(c);
+  });
+}
+function openPlanForm(id){
+  const p = id ? allPricingPlans.find(p=>p.id===id) : {};
+  const overlay = document.createElement('div');
+  overlay.className='modal-overlay';
+  overlay.innerHTML = `<div class="modal-box"><button class="modal-close" data-close>&times;</button>
+    <h3>${id?'Edit':'Add'} Pricing Plan</h3>
+    <form id="planForm" style="margin-top:10px;">
+      <div class="form-group"><label>Plan Name</label><input required id="plName" value="${escapeHtml(p.name||'')}"></div>
+      <div class="form-group"><label>Price (₦)</label><input required type="number" id="plPrice" value="${p.price||''}"></div>
+      <div class="form-group"><label>Billing Period (e.g. program, month, week)</label><input id="plPeriod" value="${escapeHtml(p.period||'program')}"></div>
+      <div class="form-group"><label>Features (one per line)</label><textarea id="plFeatures" placeholder="Personalised meal plan\nWeekly doctor check-ins\nProgress tracking">${(p.features||[]).join('\n')}</textarea></div>
+      <div class="form-group"><label><input type="checkbox" id="plHighlight" ${p.highlighted?'checked':''}> Highlight this plan (Most Popular)</label></div>
+      <button class="btn btn-primary btn-block" type="submit">Save Plan</button>
+    </form></div>`;
+  document.body.appendChild(overlay);
+  overlay.addEventListener('click', e=>{ if(e.target===overlay || e.target.closest('[data-close]')) overlay.remove(); });
+  overlay.querySelector('#planForm').addEventListener('submit', async e=>{
+    e.preventDefault();
+    const data = {
+      name: $('plName').value, price: Number($('plPrice').value), period: $('plPeriod').value || 'program',
+      features: $('plFeatures').value.split('\n').map(s=>s.trim()).filter(Boolean),
+      highlighted: $('plHighlight').checked, order: id ? (p.order||0) : allPricingPlans.length
+    };
+    try{
+      if(id) await db.collection('pricingPlans').doc(id).update(data);
+      else await db.collection('pricingPlans').add(data);
+      cacheClear('pricingPlans'); toast('Plan saved'); overlay.remove(); adminPricing($('adminTabContent'));
+    }catch(err){ toast(err.message); }
+  });
+}
+
+/* --- PROGRAM STATS (Weight Reset results numbers) --- */
+async function adminProgramStats(c){
+  await loadResultStats();
+  c.innerHTML = `
+    <button class="btn btn-primary btn-sm" id="addStatBtn" style="margin-bottom:14px;">+ Add Stat</button>
+    <div class="table-wrap"><table><thead><tr><th>Stat</th><th>Label</th><th>Actions</th></tr></thead>
+    <tbody>${allResultStats.map(s=>`
+      <tr data-id="${s.id}">
+        <td>${escapeHtml(s.stat)}</td><td>${escapeHtml(s.label)}</td>
+        <td><button class="btn btn-sm btn-ghost" data-edit>Edit</button> <button class="btn btn-sm btn-danger" data-del>Del</button></td>
+      </tr>`).join('') || '<tr><td colspan="3">No stats yet \u2014 placeholder numbers show on the Weight Reset page until you add real ones.</td></tr>'}</tbody></table></div>`;
+  $('addStatBtn').addEventListener('click', ()=> openStatForm());
+  delegate('adminTabContent','[data-edit]','click', el=> openStatForm(el.closest('tr').dataset.id));
+  delegate('adminTabContent','[data-del]','click', async el=>{
+    if(!confirm('Delete this stat?')) return;
+    await db.collection('resultStats').doc(el.closest('tr').dataset.id).delete();
+    cacheClear('resultStats'); toast('Deleted'); adminProgramStats(c);
+  });
+}
+function openStatForm(id){
+  const s = id ? allResultStats.find(s=>s.id===id) : {};
+  const overlay = document.createElement('div');
+  overlay.className='modal-overlay';
+  overlay.innerHTML = `<div class="modal-box"><button class="modal-close" data-close>&times;</button>
+    <h3>${id?'Edit':'Add'} Result Stat</h3>
+    <form id="statForm" style="margin-top:10px;">
+      <div class="form-group"><label>Stat (e.g. 500+, 92%)</label><input required id="stStat" value="${escapeHtml(s.stat||'')}"></div>
+      <div class="form-group"><label>Label (e.g. Lives Transformed)</label><input required id="stLabel" value="${escapeHtml(s.label||'')}"></div>
+      <button class="btn btn-primary btn-block" type="submit">Save Stat</button>
+    </form></div>`;
+  document.body.appendChild(overlay);
+  overlay.addEventListener('click', e=>{ if(e.target===overlay || e.target.closest('[data-close]')) overlay.remove(); });
+  overlay.querySelector('#statForm').addEventListener('submit', async e=>{
+    e.preventDefault();
+    const data = { stat: $('stStat').value, label: $('stLabel').value, order: id ? (s.order||0) : allResultStats.length };
+    try{
+      if(id) await db.collection('resultStats').doc(id).update(data);
+      else await db.collection('resultStats').add(data);
+      cacheClear('resultStats'); toast('Stat saved'); overlay.remove(); adminProgramStats($('adminTabContent'));
+    }catch(err){ toast(err.message); }
+  });
+}
+
+/* --- PROGRAM APPLICATIONS (Weight Reset "Apply Now" leads) --- */
+async function adminApplications(c){
+  c.innerHTML = `<div class="loading">Loading applications...</div>`;
+  const snap = await db.collection('programApplications').orderBy('createdAt','desc').limit(100).get().catch(()=>null);
+  let list = [];
+  if(snap) snap.forEach(d=> list.push({id:d.id, ...d.data()}));
+  if(!list.length){ c.innerHTML = `<div class="empty-state">No Weight Reset applications yet.</div>`; return; }
+  c.innerHTML = `<div class="table-wrap"><table><thead><tr><th>Name</th><th>Contact</th><th>Goal</th><th>Status</th><th>Date</th></tr></thead>
+    <tbody>${list.map(a=>`
+      <tr data-id="${a.id}">
+        <td>${escapeHtml(a.name||'')}</td>
+        <td>${escapeHtml(a.phone||'')}<br><span style="font-size:11px;color:var(--muted);">${escapeHtml(a.email||'')}</span></td>
+        <td style="max-width:180px;white-space:normal;font-size:12px;">${escapeHtml(a.message||'-')}${(a.currentWeight||a.targetWeight)?`<br><span style="color:var(--muted);">${a.currentWeight||'?'}kg → ${a.targetWeight||'?'}kg</span>`:''}</td>
+        <td><select data-status>${['New','Contacted','Enrolled','Declined'].map(s=>`<option ${a.status===s?'selected':''}>${s}</option>`).join('')}</select></td>
+        <td>${fmtDate(a.createdAt)}</td>
+      </tr>`).join('')}</tbody></table></div>`;
+  delegate('adminTabContent','[data-status]','change', async el=>{
+    await db.collection('programApplications').doc(el.closest('tr').dataset.id).update({status: el.value});
+    toast('Status updated');
+  });
+}
+
 /* --- SITE SETTINGS --- */
 async function adminSettings(c){
   await loadSettings();
@@ -1766,6 +2074,11 @@ async function adminSettings(c){
       <div class="form-group"><label>Contact Phone</label><input id="stPhone" value="${escapeHtml(siteSettings.contactPhone)}"></div>
       <div class="form-group"><label>Contact Email</label><input id="stEmail" value="${escapeHtml(siteSettings.contactEmail)}"></div>
       <div class="form-group"><label>Contact Address</label><input id="stAddress" value="${escapeHtml(siteSettings.contactAddress)}"></div>
+      <h3 style="margin:18px 0 6px;font-size:15px;">Weight Reset Program Page</h3>
+      <div class="form-group"><label>Hero Title</label><input id="stWrHero" value="${escapeHtml(siteSettings.wrHeroTitle)}"></div>
+      <div class="form-group"><label>Hero Subtitle</label><textarea id="stWrSub">${escapeHtml(siteSettings.wrHeroSubtitle)}</textarea></div>
+      <div class="form-group"><label>Program Description</label><textarea id="stWrProgram">${escapeHtml(siteSettings.wrProgramText)}</textarea></div>
+      <div class="form-group"><label>Science Description</label><textarea id="stWrScience">${escapeHtml(siteSettings.wrScienceText)}</textarea></div>
       <button class="btn btn-primary btn-block" type="submit">Save Settings</button>
     </form>
   </div>`;
@@ -1773,7 +2086,9 @@ async function adminSettings(c){
     e.preventDefault();
     const data = {
       heroTitle:$('stHero').value, heroSubtitle:$('stSub').value, aboutText:$('stAbout').value,
-      contactPhone:$('stPhone').value, contactEmail:$('stEmail').value, contactAddress:$('stAddress').value
+      contactPhone:$('stPhone').value, contactEmail:$('stEmail').value, contactAddress:$('stAddress').value,
+      wrHeroTitle:$('stWrHero').value, wrHeroSubtitle:$('stWrSub').value,
+      wrProgramText:$('stWrProgram').value, wrScienceText:$('stWrScience').value
     };
     try{
       await db.collection('settings').doc('site').set(data, {merge:true});
@@ -2008,7 +2323,7 @@ async function init(){
   updateCartBadge();
   mwInitWidget(); // wire the chat button immediately - never blocked by data loading
   try{
-    await Promise.all([loadProducts(), loadCategories(), loadDoctors(), loadFaqs(), loadTestimonials(), loadSettings()]);
+    await Promise.all([loadProducts(), loadCategories(), loadDoctors(), loadFaqs(), loadTestimonials(), loadPricingPlans(), loadResultStats(), loadSettings()]);
   }catch(err){ console.error('init data load', err); }
   navigate('home');
 }
