@@ -349,7 +349,7 @@ let siteSettings = {
 let activeChatConsultationId = null;
 let chatUnsub = null;
 const ADMIN_PIN = "1990";
-const ADMIN_EMAIL = "oladejiridwanopeyemi@gmail.com";
+const ADMIN_EMAILS = ["oladejiridwanopeyemi@gmail.com", "medwholelimited@gmail.com"];
 const DELIVERY_FEE = 1500;
 const GOAL_OPTIONS = ['Lose weight sustainably','Understand my body better','Build healthy eating habits','Medical weight management','Postpartum weight loss','Hormone-related weight gain'];
 
@@ -526,7 +526,7 @@ auth.onAuthStateChanged(async user=>{
     try{
       const doc = await db.collection('users').doc(user.uid).get();
       currentUserData = doc.exists ? doc.data() : {name:user.email, email:user.email, phone:'', role:'customer'};
-      const shouldBeAdmin = (user.email||'').toLowerCase() === ADMIN_EMAIL.toLowerCase();
+      const shouldBeAdmin = ADMIN_EMAILS.includes((user.email||'').toLowerCase());
       if(shouldBeAdmin && currentUserData.role !== 'admin'){
         currentUserData.role = 'admin';
         await db.collection('users').doc(user.uid).set(currentUserData, {merge:true});
@@ -559,7 +559,7 @@ auth.onAuthStateChanged(async user=>{
 
 function registerUser(name, email, phone, password){
   return auth.createUserWithEmailAndPassword(email, password).then(cred=>{
-    const role = (email||'').toLowerCase() === ADMIN_EMAIL.toLowerCase() ? 'admin' : 'customer';
+    const role = ADMIN_EMAILS.includes((email||'').toLowerCase()) ? 'admin' : 'customer';
     if(role==='customer') mwStatIncrement({totalCustomers:1});
     return db.collection('users').doc(cred.user.uid).set({
       name, email, phone, role, createdAt: firebase.firestore.FieldValue.serverTimestamp()
