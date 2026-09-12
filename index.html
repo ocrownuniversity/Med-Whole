@@ -342,6 +342,7 @@ let chatUnsub = null;
 const ADMIN_PIN = "1990";
 const ADMIN_EMAIL = "oladejiridwanopeyemi@gmail.com";
 const DELIVERY_FEE = 1500;
+const GOAL_OPTIONS = ['Lose weight sustainably','Understand my body better','Build healthy eating habits','Medical weight management','Postpartum weight loss','Hormone-related weight gain'];
 
 /* ================= HELPERS ================= */
 function $(id){ return document.getElementById(id); }
@@ -360,6 +361,69 @@ function fmtDate(ts){
 function escapeHtml(s){
   if(s===undefined || s===null) return '';
   return String(s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+/* ================= SHARED GOAL + APPLY FORM (no account required) ================= */
+/* Reusable two-step "pick your goal -> leave your details" widget, used on both
+   the Homepage and the Weight Reset Program page. `prefix` keeps element IDs unique
+   per instance so it can safely appear on any page. */
+function applyFormHtml(prefix){
+  return `
+  <div class="card" style="max-width:480px;margin:0 auto;">
+    <div id="${prefix}GoalStep">
+      <h3 style="font-size:16px;margin-bottom:4px;">What's your main goal?</h3>
+      <p style="font-size:12.5px;color:var(--muted);margin-bottom:14px;">Select all that apply.</p>
+      <div id="${prefix}GoalChips" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:18px;">
+        ${GOAL_OPTIONS.map(g=>`<button type="button" class="chip" data-goal="${escapeHtml(g)}">${escapeHtml(g)}</button>`).join('')}
+      </div>
+      <button id="${prefix}GoalContinue" class="btn btn-accent btn-block">Continue →</button>
+    </div>
+    <div id="${prefix}DetailsStep" class="hidden">
+      <form id="${prefix}ApplyForm">
+        <div class="form-group"><label>Full Name</label><input required id="${prefix}WaName" value="${escapeHtml(currentUserData?.name||'')}"></div>
+        <div class="form-group"><label>Email</label><input required type="email" id="${prefix}WaEmail" value="${escapeHtml(currentUserData?.email||'')}"></div>
+        <div class="form-group"><label>WhatsApp Number</label><input required id="${prefix}WaPhone" placeholder="e.g. 08012345678" value="${escapeHtml(currentUserData?.phone||'')}"></div>
+        <button type="button" id="${prefix}GoalBack" class="btn btn-outline btn-block" style="margin-bottom:10px;">← Back</button>
+        <button class="btn btn-accent btn-block" type="submit">Submit</button>
+      </form>
+    </div>
+  </div>`;
+}
+function wireApplyForm(prefix){
+  let selectedGoals = [];
+  $(prefix+'GoalChips').querySelectorAll('.chip').forEach(chip=> chip.addEventListener('click', ()=>{
+    chip.classList.toggle('active');
+    const g = chip.dataset.goal;
+    if(chip.classList.contains('active')) selectedGoals.push(g);
+    else selectedGoals = selectedGoals.filter(x=>x!==g);
+  }));
+  $(prefix+'GoalContinue').addEventListener('click', ()=>{
+    if(!selectedGoals.length){ toast('Please select at least one goal'); return; }
+    $(prefix+'GoalStep').classList.add('hidden');
+    $(prefix+'DetailsStep').classList.remove('hidden');
+  });
+  $(prefix+'GoalBack').addEventListener('click', ()=>{
+    $(prefix+'DetailsStep').classList.add('hidden');
+    $(prefix+'GoalStep').classList.remove('hidden');
+  });
+  $(prefix+'ApplyForm').addEventListener('submit', async e=>{
+    e.preventDefault();
+    const btn = e.target.querySelector('button[type=submit]');
+    btn.disabled = true; btn.textContent = 'Submitting...';
+    try{
+      await db.collection('programApplications').add({
+        name: $(prefix+'WaName').value, email: $(prefix+'WaEmail').value, phone: $(prefix+'WaPhone').value,
+        goals: selectedGoals, userId: currentUser?.uid || null,
+        status:'New', createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+      toast("Thanks! We'll reach out to you on WhatsApp soon.");
+      e.target.reset();
+      selectedGoals = [];
+      $(prefix+'GoalChips').querySelectorAll('.chip.active').forEach(c=>c.classList.remove('active'));
+      $(prefix+'DetailsStep').classList.add('hidden');
+      $(prefix+'GoalStep').classList.remove('hidden');
+    }catch(err){ toast(err.message); }
+    finally{ btn.disabled = false; btn.textContent = 'Submit'; }
+  });
 }
 function saveCart(){
   localStorage.setItem('mw_cart', JSON.stringify(cart));
@@ -605,6 +669,11 @@ function renderHome(){
       </div>
     </section>
 
+    <section style="background:linear-gradient(135deg,#fff0f7,var(--bg));">
+      <div class="section-title"><h2>Ready to Start? Apply in 2 Minutes</h2><p>No pressure, no judgment — we'll reach out to you on WhatsApp to complete your onboarding.</p></div>
+      ${applyFormHtml('home')}
+    </section>
+
     <section>
       <div class="section-title"><h2>Shop by Category</h2><p>Explore our three core health categories</p></div>
       <div class="grid grid-3" id="homeCategories"></div>
@@ -679,6 +748,8 @@ function renderHome(){
       </div>
     </div>`).join('');
   cc.querySelectorAll('[data-cat]').forEach(b=> b.addEventListener('click', ()=> navigate('products', b.dataset.cat)));
+
+  wireApplyForm('home');
 
   const featured = allProducts.filter(p=>p.featured).slice(0,8);
   $('homeFeatured').innerHTML = featured.length ? featured.map(productCardHtml).join('') : `<div class="empty-state">No featured products yet.</div>`;
@@ -1149,7 +1220,6 @@ function renderWeightReset(){
     {stat:'8', label:'Years of Practice'}
   ];
   const plans = allPricingPlans;
-  const GOAL_OPTIONS = ['Lose weight sustainably','Understand my body better','Build healthy eating habits','Medical weight management','Postpartum weight loss','Hormone-related weight gain'];
   $('views').innerHTML = `
     <section class="wr-hero wr-section" id="wr-home">
       <h1>${escapeHtml(siteSettings.wrHeroTitle)}</h1>
@@ -1229,68 +1299,11 @@ function renderWeightReset(){
 
       <section class="wr-section" id="wr-apply">
         <div class="section-title"><h2>Apply Now</h2></div>
-        <div class="card" style="max-width:480px;margin:0 auto;">
-          <div id="wrGoalStep">
-            <h3 style="font-size:16px;margin-bottom:4px;">What's your main goal?</h3>
-            <p style="font-size:12.5px;color:var(--muted);margin-bottom:14px;">Select all that apply.</p>
-            <div id="wrGoalChips" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:18px;">
-              ${GOAL_OPTIONS.map(g=>`<button type="button" class="chip" data-goal="${escapeHtml(g)}">${escapeHtml(g)}</button>`).join('')}
-            </div>
-            <button id="wrGoalContinue" class="btn btn-accent btn-block">Continue →</button>
-          </div>
-          <div id="wrDetailsStep" class="hidden">
-            <form id="wrApplyForm">
-              <div class="form-group"><label>Full Name</label><input required id="waName" value="${escapeHtml(currentUserData?.name||'')}"></div>
-              <div class="form-group"><label>Email</label><input required type="email" id="waEmail" value="${escapeHtml(currentUserData?.email||'')}"></div>
-              <div class="form-group"><label>WhatsApp Number</label><input required id="waPhone" placeholder="e.g. 08012345678" value="${escapeHtml(currentUserData?.phone||'')}"></div>
-              <button type="button" id="wrGoalBack" class="btn btn-outline btn-block" style="margin-bottom:10px;">← Back</button>
-              <button class="btn btn-accent btn-block" type="submit">Submit</button>
-            </form>
-          </div>
-        </div>
+        ${applyFormHtml('wr')}
       </section>
-
-      <div style="text-align:center;margin:30px 0 10px;display:flex;gap:22px;justify-content:center;">
-        <a href="#" data-nav="admin" style="font-size:13px;color:var(--muted);font-weight:600;">🔒 Admin Login</a>
-        <a href="#" data-nav="account" style="font-size:13px;color:var(--muted);font-weight:600;">👤 Client Login</a>
-      </div>
     </div>`;
 
-  let selectedGoals = [];
-  $('wrGoalChips').querySelectorAll('.chip').forEach(chip=> chip.addEventListener('click', ()=>{
-    chip.classList.toggle('active');
-    const g = chip.dataset.goal;
-    if(chip.classList.contains('active')) selectedGoals.push(g);
-    else selectedGoals = selectedGoals.filter(x=>x!==g);
-  }));
-  $('wrGoalContinue').addEventListener('click', ()=>{
-    if(!selectedGoals.length){ toast('Please select at least one goal'); return; }
-    $('wrGoalStep').classList.add('hidden');
-    $('wrDetailsStep').classList.remove('hidden');
-  });
-  $('wrGoalBack').addEventListener('click', ()=>{
-    $('wrDetailsStep').classList.add('hidden');
-    $('wrGoalStep').classList.remove('hidden');
-  });
-  $('wrApplyForm').addEventListener('submit', async e=>{
-    e.preventDefault();
-    const btn = e.target.querySelector('button[type=submit]');
-    btn.disabled = true; btn.textContent = 'Submitting...';
-    try{
-      await db.collection('programApplications').add({
-        name: $('waName').value, email: $('waEmail').value, phone: $('waPhone').value,
-        goals: selectedGoals, userId: currentUser?.uid || null,
-        status:'New', createdAt: firebase.firestore.FieldValue.serverTimestamp()
-      });
-      toast("Thanks! We'll reach out to you on WhatsApp soon.");
-      e.target.reset();
-      selectedGoals = [];
-      $('wrGoalChips').querySelectorAll('.chip.active').forEach(c=>c.classList.remove('active'));
-      $('wrDetailsStep').classList.add('hidden');
-      $('wrGoalStep').classList.remove('hidden');
-    }catch(err){ toast(err.message); }
-    finally{ btn.disabled = false; btn.textContent = 'Submit'; }
-  });
+  wireApplyForm('wr');
 }
 
 registerRoute('book-consult', renderBookConsult);
