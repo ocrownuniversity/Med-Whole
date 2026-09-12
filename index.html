@@ -102,14 +102,25 @@ section{padding:40px 16px;}
 .cat-card p{font-size:13px; color:var(--muted); margin-bottom:12px;}
 
 .card{background:var(--card); border-radius:var(--radius); box-shadow:var(--shadow); padding:18px;}
-.product-card{background:var(--card); border-radius:var(--radius); box-shadow:var(--shadow); overflow:hidden; display:flex; flex-direction:column;}
+.product-card{background:var(--card); border-radius:var(--radius); box-shadow:var(--shadow); overflow:hidden; display:flex; flex-direction:column; position:relative; border:2px solid transparent;}
+.product-card.popular{border-color:var(--accent);}
 .product-card img{height:150px; object-fit:cover; width:100%; background:#eef7f5;}
-.product-card .body{padding:14px; display:flex; flex-direction:column; gap:6px; flex:1;}
-.product-card h4{font-size:14px; color:var(--text);}
-.product-card .cat-tag{font-size:11px; color:var(--primary); font-weight:600; text-transform:uppercase;}
-.price-row{display:flex; align-items:center; gap:8px; margin-top:4px;}
-.price-now{font-weight:700; color:var(--primary-dark); font-size:15px;}
-.price-old{text-decoration:line-through; color:var(--muted); font-size:12px;}
+.product-card .body{padding:18px; display:flex; flex-direction:column; gap:4px; flex:1;}
+.product-card h4{font-size:15px; color:var(--text); font-weight:700; margin-top:2px; cursor:pointer;}
+.product-card .cat-tag{font-size:11px; color:var(--muted); font-weight:700; text-transform:uppercase; letter-spacing:.4px;}
+.pc-badge{position:absolute; top:-11px; left:50%; transform:translateX(-50%); background:#f0b429; color:#4a2e00; font-size:10.5px; font-weight:700; padding:5px 12px; border-radius:999px; white-space:nowrap; z-index:2; box-shadow:0 3px 8px rgba(0,0,0,.15);}
+.price-row{display:flex; align-items:baseline; gap:8px; margin-top:4px;}
+.price-now{font-weight:800; color:var(--text); font-size:24px;}
+.price-old{text-decoration:line-through; color:var(--muted); font-size:13px;}
+.pc-period{font-size:12px; color:var(--muted); margin-top:-2px;}
+.pc-desc{font-size:13px; color:var(--muted); margin-top:6px;}
+.pc-features{list-style:none; margin:10px 0 4px; padding-top:10px; border-top:1px solid var(--border);}
+.pc-features li{padding:5px 0; font-size:12.5px; color:var(--text);}
+.pc-features li::before{content:'\2713  '; color:var(--ok); font-weight:700;}
+.pc-features li.excl{color:var(--muted);}
+.pc-features li.excl::before{content:'\2013  '; color:var(--muted); font-weight:700;}
+.btn-accent-outline-sm{background:transparent; border:2px solid var(--accent); color:var(--accent); font-weight:700;}
+.btn-accent-outline-sm:hover{background:var(--accent); color:#fff;}
 .stock-tag{font-size:11px; font-weight:600;}
 .stock-in{color:var(--ok);} .stock-out{color:var(--danger);}
 
@@ -708,19 +719,29 @@ function starsHtml(avg, size){
 }
 function productCardHtml(p){
   const inStock = (p.stockQty===undefined ? true : p.stockQty > 0);
+  const priceValue = p.discountPrice || p.price;
+  const features = (p.features||'').split('\n').map(f=>f.trim()).filter(Boolean);
+  const waDigits = escapeHtml(siteSettings.contactPhone).replace(/^0/,'').replace(/\D/g,'');
+  const waMsg = encodeURIComponent(`Hi, I'm interested in ${p.name} (${money(priceValue)}). Please tell me how to get started.`);
   return `
-  <div class="product-card" data-view-product="${p.id}">
-    <img src="${escapeHtml(p.imageUrl)}" onerror="this.src='https://placehold.co/400x300?text=Product'">
+  <div class="product-card ${p.popular?'popular':''}">
+    ${p.popular ? `<div class="pc-badge">⚡ MOST POPULAR</div>` : ''}
     <div class="body">
       <span class="cat-tag">${escapeHtml(catName(p.category))}</span>
-      <h4>${escapeHtml(p.name)}</h4>
-      ${p.reviewCount ? `<div>${starsHtml(p.avgRating,12)} <span style="font-size:11px;color:var(--muted);">(${p.reviewCount})</span></div>` : ''}
+      <h4 data-view-product="${p.id}">${escapeHtml(p.name)}</h4>
       <div class="price-row">
-        <span class="price-now">${money(p.discountPrice || p.price)}</span>
+        <span class="price-now">${money(priceValue)}</span>
         ${p.discountPrice ? `<span class="price-old">${money(p.price)}</span>` : ''}
       </div>
-      <span class="stock-tag ${inStock?'stock-in':'stock-out'}">${inStock?'In Stock':'Out of Stock'}</span>
-      <button class="btn btn-sm btn-primary btn-block" data-view-product="${p.id}" style="margin-top:6px;">View Product</button>
+      ${p.period ? `<div class="pc-period">${escapeHtml(p.period)}</div>` : ''}
+      ${p.description ? `<p class="pc-desc">${escapeHtml(p.description)}</p>` : ''}
+      ${features.length ? `<ul class="pc-features">${features.map(f=>{
+        const excluded = f.startsWith('-');
+        return `<li class="${excluded?'excl':''}">${escapeHtml(excluded ? f.slice(1).trim() : f)}</li>`;
+      }).join('')}</ul>` : ''}
+      <span class="stock-tag ${inStock?'stock-in':'stock-out'}" style="margin-top:8px;">${inStock?'In Stock':'Out of Stock'}</span>
+      <a href="https://wa.me/234${waDigits}?text=${waMsg}" target="_blank" class="btn btn-accent-outline-sm btn-block" style="margin-top:10px;border-radius:999px;padding:11px 20px;">GET STARTED →</a>
+      <button class="btn btn-sm btn-ghost btn-block" data-view-product="${p.id}" style="margin-top:8px;">View Details</button>
     </div>
   </div>`;
 }
@@ -1128,6 +1149,7 @@ function renderWeightReset(){
     {stat:'8', label:'Years of Practice'}
   ];
   const plans = allPricingPlans;
+  const GOAL_OPTIONS = ['Lose weight sustainably','Understand my body better','Build healthy eating habits','Medical weight management','Postpartum weight loss','Hormone-related weight gain'];
   $('views').innerHTML = `
     <section class="wr-hero wr-section" id="wr-home">
       <h1>${escapeHtml(siteSettings.wrHeroTitle)}</h1>
@@ -1208,15 +1230,23 @@ function renderWeightReset(){
       <section class="wr-section" id="wr-apply">
         <div class="section-title"><h2>Apply Now</h2></div>
         <div class="card" style="max-width:480px;margin:0 auto;">
-          <form id="wrApplyForm">
-            <div class="form-group"><label>Full Name</label><input required id="waName" value="${escapeHtml(currentUserData?.name||'')}"></div>
-            <div class="form-group"><label>Email</label><input required type="email" id="waEmail" value="${escapeHtml(currentUserData?.email||'')}"></div>
-            <div class="form-group"><label>Phone</label><input required id="waPhone" value="${escapeHtml(currentUserData?.phone||'')}"></div>
-            <div class="form-group"><label>Current Weight (kg, optional)</label><input type="number" id="waCurrentWeight"></div>
-            <div class="form-group"><label>Goal Weight (kg, optional)</label><input type="number" id="waTargetWeight"></div>
-            <div class="form-group"><label>Tell us about your goals</label><textarea id="waMessage" placeholder="What would you like to achieve?"></textarea></div>
-            <button class="btn btn-accent btn-block" type="submit">Submit Application</button>
-          </form>
+          <div id="wrGoalStep">
+            <h3 style="font-size:16px;margin-bottom:4px;">What's your main goal?</h3>
+            <p style="font-size:12.5px;color:var(--muted);margin-bottom:14px;">Select all that apply.</p>
+            <div id="wrGoalChips" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:18px;">
+              ${GOAL_OPTIONS.map(g=>`<button type="button" class="chip" data-goal="${escapeHtml(g)}">${escapeHtml(g)}</button>`).join('')}
+            </div>
+            <button id="wrGoalContinue" class="btn btn-accent btn-block">Continue →</button>
+          </div>
+          <div id="wrDetailsStep" class="hidden">
+            <form id="wrApplyForm">
+              <div class="form-group"><label>Full Name</label><input required id="waName" value="${escapeHtml(currentUserData?.name||'')}"></div>
+              <div class="form-group"><label>Email</label><input required type="email" id="waEmail" value="${escapeHtml(currentUserData?.email||'')}"></div>
+              <div class="form-group"><label>WhatsApp Number</label><input required id="waPhone" placeholder="e.g. 08012345678" value="${escapeHtml(currentUserData?.phone||'')}"></div>
+              <button type="button" id="wrGoalBack" class="btn btn-outline btn-block" style="margin-bottom:10px;">← Back</button>
+              <button class="btn btn-accent btn-block" type="submit">Submit</button>
+            </form>
+          </div>
         </div>
       </section>
 
@@ -1226,6 +1256,22 @@ function renderWeightReset(){
       </div>
     </div>`;
 
+  let selectedGoals = [];
+  $('wrGoalChips').querySelectorAll('.chip').forEach(chip=> chip.addEventListener('click', ()=>{
+    chip.classList.toggle('active');
+    const g = chip.dataset.goal;
+    if(chip.classList.contains('active')) selectedGoals.push(g);
+    else selectedGoals = selectedGoals.filter(x=>x!==g);
+  }));
+  $('wrGoalContinue').addEventListener('click', ()=>{
+    if(!selectedGoals.length){ toast('Please select at least one goal'); return; }
+    $('wrGoalStep').classList.add('hidden');
+    $('wrDetailsStep').classList.remove('hidden');
+  });
+  $('wrGoalBack').addEventListener('click', ()=>{
+    $('wrDetailsStep').classList.add('hidden');
+    $('wrGoalStep').classList.remove('hidden');
+  });
   $('wrApplyForm').addEventListener('submit', async e=>{
     e.preventDefault();
     const btn = e.target.querySelector('button[type=submit]');
@@ -1233,15 +1279,17 @@ function renderWeightReset(){
     try{
       await db.collection('programApplications').add({
         name: $('waName').value, email: $('waEmail').value, phone: $('waPhone').value,
-        currentWeight: $('waCurrentWeight').value ? Number($('waCurrentWeight').value) : null,
-        targetWeight: $('waTargetWeight').value ? Number($('waTargetWeight').value) : null,
-        message: $('waMessage').value, userId: currentUser?.uid || null,
+        goals: selectedGoals, userId: currentUser?.uid || null,
         status:'New', createdAt: firebase.firestore.FieldValue.serverTimestamp()
       });
-      toast("Application submitted! We'll reach out to you soon.");
+      toast("Thanks! We'll reach out to you on WhatsApp soon.");
       e.target.reset();
+      selectedGoals = [];
+      $('wrGoalChips').querySelectorAll('.chip.active').forEach(c=>c.classList.remove('active'));
+      $('wrDetailsStep').classList.add('hidden');
+      $('wrGoalStep').classList.remove('hidden');
     }catch(err){ toast(err.message); }
-    finally{ btn.disabled = false; btn.textContent = 'Submit Application'; }
+    finally{ btn.disabled = false; btn.textContent = 'Submit'; }
   });
 }
 
@@ -1541,7 +1589,10 @@ function openProductForm(id){
         <div id="pfImgStatus" style="font-size:11px;color:var(--muted);margin-top:4px;">Upload a photo from your device \u2014 no URL needed.</div>
       </div>
       <div class="form-group"><label>Stock Quantity</label><input type="number" id="pfStock" value="${p.stockQty ?? 10}"></div>
+      <div class="form-group"><label>Billing Period (optional, e.g. "per 8-week cycle")</label><input id="pfPeriod" value="${escapeHtml(p.period||'')}"></div>
+      <div class="form-group"><label>Features / What's Included (optional, one per line — start a line with "-" to show it greyed out as not included)</label><textarea id="pfFeatures" placeholder="e.g. Personalized meal plan">${escapeHtml(p.features||'')}</textarea></div>
       <div class="form-group"><label><input type="checkbox" id="pfFeat" ${p.featured?'checked':''}> Featured Product</label></div>
+      <div class="form-group"><label><input type="checkbox" id="pfPopular" ${p.popular?'checked':''}> Mark as "Most Popular" (shows badge on card)</label></div>
       <button class="btn btn-primary btn-block" type="submit">Save Product</button>
     </form></div>`;
   document.body.appendChild(overlay);
@@ -1563,7 +1614,8 @@ function openProductForm(id){
     const data = {
       name: $('pfName2').value, category: $('pfCat').value, description: $('pfDesc').value,
       price: Number($('pfPrice').value), discountPrice: $('pfDisc').value ? Number($('pfDisc').value) : null,
-      imageUrl: pfImgData, stockQty: Number($('pfStock').value), featured: $('pfFeat').checked
+      imageUrl: pfImgData, stockQty: Number($('pfStock').value), featured: $('pfFeat').checked,
+      period: $('pfPeriod').value, features: $('pfFeatures').value, popular: $('pfPopular').checked
     };
     try{
       if(id) await db.collection('products').doc(id).update(data);
@@ -2048,15 +2100,21 @@ async function adminApplications(c){
   let list = [];
   if(snap) snap.forEach(d=> list.push({id:d.id, ...d.data()}));
   if(!list.length){ c.innerHTML = `<div class="empty-state">No Weight Reset applications yet.</div>`; return; }
-  c.innerHTML = `<div class="table-wrap"><table><thead><tr><th>Name</th><th>Contact</th><th>Goal</th><th>Status</th><th>Date</th></tr></thead>
-    <tbody>${list.map(a=>`
+  c.innerHTML = `<div class="table-wrap"><table><thead><tr><th>Name</th><th>Contact</th><th>Goal</th><th>Status</th><th>Date</th><th>Action</th></tr></thead>
+    <tbody>${list.map(a=>{
+      const goalText = Array.isArray(a.goals) && a.goals.length ? a.goals.map(escapeHtml).join(', ') : escapeHtml(a.message||'-');
+      const waPhone = (a.phone||'').replace(/^0/,'').replace(/\D/g,'');
+      const waText = encodeURIComponent(`Hi ${a.name||''}, this is Med Whole Limited following up on your Weight Reset application.`);
+      return `
       <tr data-id="${a.id}">
         <td>${escapeHtml(a.name||'')}</td>
         <td>${escapeHtml(a.phone||'')}<br><span style="font-size:11px;color:var(--muted);">${escapeHtml(a.email||'')}</span></td>
-        <td style="max-width:180px;white-space:normal;font-size:12px;">${escapeHtml(a.message||'-')}${(a.currentWeight||a.targetWeight)?`<br><span style="color:var(--muted);">${a.currentWeight||'?'}kg → ${a.targetWeight||'?'}kg</span>`:''}</td>
+        <td style="max-width:180px;white-space:normal;font-size:12px;">${goalText}${(a.currentWeight||a.targetWeight)?`<br><span style="color:var(--muted);">${a.currentWeight||'?'}kg → ${a.targetWeight||'?'}kg</span>`:''}</td>
         <td><select data-status>${['New','Contacted','Enrolled','Declined'].map(s=>`<option ${a.status===s?'selected':''}>${s}</option>`).join('')}</select></td>
         <td>${fmtDate(a.createdAt)}</td>
-      </tr>`).join('')}</tbody></table></div>`;
+        <td>${waPhone ? `<a href="https://wa.me/234${waPhone}?text=${waText}" target="_blank" class="btn btn-sm btn-primary">WhatsApp</a>` : '-'}</td>
+      </tr>`;
+    }).join('')}</tbody></table></div>`;
   delegate('adminTabContent','[data-status]','change', async el=>{
     await db.collection('programApplications').doc(el.closest('tr').dataset.id).update({status: el.value});
     toast('Status updated');
