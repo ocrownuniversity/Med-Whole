@@ -1419,7 +1419,7 @@ function renderBookConsult(preselectDoc){
       mwStatIncrement({totalConsultations:1});
     }catch(err){ /* non-fatal - still route them to WhatsApp */ }
     const phone = doctor.whatsapp.replace(/^0/,'').replace(/\D/g,'');
-    const text = `Hi Dr. ${doctor.name}, I'd like a ${type} consultation via Med Whole.\n\nConcern: ${issue}\nPreferred time: ${preferredDate}\n\n- ${currentUserData?.name||'A patient'}`;
+    const text = `Hi, I'm ${currentUserData?.name||'a patient'} and I'd like to book a ${type} consultation with Med Whole Limited.\n\nConcern: ${issue}\nPreferred time: ${preferredDate}\n\nLooking forward to your response. Thank you!`;
     window.open(`https://wa.me/234${phone}?text=${encodeURIComponent(text)}`, '_blank');
     toast('Opening WhatsApp...');
     navigate('home');
