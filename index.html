@@ -5,6 +5,33 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link rel="icon" type="image/png" href="logo.png">
 <title>Med Whole Limited - Healthcare, Wellness, Aesthetics</title>
+<meta name="description" content="Med Whole Limited brings you The Weight Reset, Med Whole Aesthetics and Med Whole Medical — doctor-led weight management, beauty with confidence, and quality medical solutions including trusted online doctor consultations in Nigeria.">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://medwhole.com.ng/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Med Whole Limited">
+<meta property="og:title" content="Med Whole Limited - Healthcare, Wellness, Aesthetics">
+<meta property="og:description" content="Doctor-led weight management, aesthetics and online medical consultations. Apply in 2 minutes — no pressure, no judgment.">
+<meta property="og:image" content="https://medwhole.com.ng/logo.png">
+<meta property="og:url" content="https://medwhole.com.ng/">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Med Whole Limited - Healthcare, Wellness, Aesthetics">
+<meta name="twitter:description" content="Doctor-led weight management, aesthetics and online medical consultations in Nigeria.">
+<meta name="twitter:image" content="https://medwhole.com.ng/logo.png">
+<!-- After verifying ownership in Google Search Console, paste your verification meta tag here -->
+<!-- <meta name="google-site-verification" content="PASTE_YOUR_CODE_HERE"> -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "MedicalBusiness",
+  "name": "Med Whole Limited",
+  "description": "Med Whole Limited brings you The Weight Reset, Med Whole Aesthetics and Med Whole Medical — doctor-led weight management, beauty with confidence, and quality medical solutions.",
+  "image": "https://medwhole.com.ng/logo.png",
+  "url": "https://medwhole.com.ng/",
+  "telephone": "+2348056911810",
+  "areaServed": "NG"
+}
+</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
@@ -777,7 +804,7 @@ function renderHome(){
   const cc = $('homeCategories');
   cc.innerHTML = allCategories.map(c=>`
     <div class="cat-card">
-      <img src="${escapeHtml(c.imageUrl)}" onerror="this.src='https://placehold.co/600x300?text=Med+Whole'">
+      <img src="${escapeHtml(c.imageUrl)}" alt="${escapeHtml(c.name)}" onerror="this.src='https://placehold.co/600x300?text=Med+Whole'">
       <div class="body">
         <h3>${escapeHtml(c.name)}</h3>
         <p>${escapeHtml(c.description||'')}</p>
@@ -872,7 +899,7 @@ function wireProductCards(containerId){
 function doctorCardHtml(d){
   return `
   <div class="doctor-card">
-    <img src="${escapeHtml(d.imageUrl||'')}" onerror="this.src='https://placehold.co/150x150?text=Dr'">
+    <img src="${escapeHtml(d.imageUrl||'')}" alt="Dr. ${escapeHtml(d.name)}" onerror="this.src='https://placehold.co/150x150?text=Dr'">
     <h4>${escapeHtml(d.name)}</h4>
     <div class="spec">${escapeHtml(d.specialty||'')}</div>
     <p>${escapeHtml((d.description||'').slice(0,70))}</p>
@@ -894,7 +921,7 @@ function openProductModal(id){
   overlay.innerHTML = `
     <div class="modal-box">
       <button class="modal-close" data-close>&times;</button>
-      <img src="${escapeHtml(p.imageUrl)}" style="border-radius:12px;margin-bottom:12px;" onerror="this.src='https://placehold.co/400x300?text=Product'">
+      <img src="${escapeHtml(p.imageUrl)}" alt="${escapeHtml(p.name)}" style="border-radius:12px;margin-bottom:12px;" onerror="this.src='https://placehold.co/400x300?text=Product'">
       <span class="cat-tag">${escapeHtml(catName(p.category))}</span>
       <h3 style="margin:6px 0;">${escapeHtml(p.name)}</h3>
       <div class="mw-rating-summary" style="margin-bottom:6px;">${p.reviewCount ? `${starsHtml(p.avgRating,14)} <span style="font-size:12px;color:var(--muted);">${(p.avgRating||0).toFixed(1)} (${p.reviewCount} review${p.reviewCount===1?'':'s'})</span>` : `<span style="font-size:12px;color:var(--muted);">No reviews yet</span>`}</div>
