@@ -1813,8 +1813,77 @@ async function adminOrders(c){
 async function adminCustomers(c){
   const snap = await db.collection('users').where('role','==','customer').get();
   let users = []; snap.forEach(d=>users.push({id:d.id,...d.data()}));
-  c.innerHTML = `<div class="table-wrap"><table><thead><tr><th>Name</th><th>Email</th><th>Phone</th><th>Joined</th></tr></thead>
-    <tbody>${users.map(u=>`<tr><td>${escapeHtml(u.name)}</td><td>${escapeHtml(u.email)}</td><td>${escapeHtml(u.phone||'')}</td><td>${fmtDate(u.createdAt)}</td></tr>`).join('') || '<tr><td colspan="4">No customers yet.</td></tr>'}</tbody></table></div>`;
+  c.innerHTML = `<div class="table-wrap"><table><thead><tr><th>Name</th><th>Email</th><th>Phone</th><th>Joined</th><th>Action</th></tr></thead>
+    <tbody>${users.map(u=>`<tr data-uid="${u.id}" data-name="${escapeHtml(u.name)}"><td>${escapeHtml(u.name)}</td><td>${escapeHtml(u.email)}</td><td>${escapeHtml(u.phone||'')}</td><td>${fmtDate(u.createdAt)}</td><td><button class="btn btn-sm btn-ghost" data-history>History</button></td></tr>`).join('') || '<tr><td colspan="5">No customers yet.</td></tr>'}</tbody></table></div>`;
+  delegate('adminTabContent','[data-history]','click', el=>{
+    const tr = el.closest('tr');
+    openCustomerHistory(tr.dataset.uid, tr.dataset.name);
+  });
+}
+/* Unified activity history for a single customer — pulls their orders, consultations,
+   prescriptions and program applications together into one chronological timeline. */
+async function openCustomerHistory(uid, name){
+  const overlay = document.createElement('div');
+  overlay.className='modal-overlay';
+  overlay.innerHTML = `<div class="modal-box">
+    <button class="modal-close" data-close>&times;</button>
+    <h3>Activity History — ${escapeHtml(name)}</h3>
+    <div id="custHistoryBody" style="margin-top:14px;">Loading...</div>
+  </div>`;
+  document.body.appendChild(overlay);
+  overlay.addEventListener('click', e=>{ if(e.target===overlay || e.target.closest('[data-close]')) overlay.remove(); });
+
+  try{
+    await loadDoctors();
+    const [ordersSnap, consultSnap, prescSnap, appsSnap] = await Promise.all([
+      db.collection('orders').where('userId','==',uid).get(),
+      db.collection('consultations').where('userId','==',uid).get(),
+      db.collection('prescriptions').where('userId','==',uid).get(),
+      db.collection('programApplications').where('userId','==',uid).get()
+    ]);
+    let events = [];
+    ordersSnap.forEach(d=>{
+      const o = d.data();
+      events.push({type:'Order', color:'#0e7c66', date:o.createdAt,
+        title:`Order — ${money(o.total)} (${o.status||'Pending'})`,
+        detail:(o.items||[]).map(i=>`${i.name} ×${i.qty}`).join(', ')});
+    });
+    consultSnap.forEach(d=>{
+      const cn = d.data();
+      const doc = allDoctors.find(x=>x.id===cn.doctorId);
+      events.push({type:'Consultation', color:'#1d6fa5', date:cn.createdAt,
+        title:`Consultation with ${doc?('Dr. '+doc.name):'a doctor'} (${cn.status||'Pending'})`,
+        detail:`${cn.type||''} · ${cn.issue||''}`});
+    });
+    prescSnap.forEach(d=>{
+      const pr = d.data();
+      const doc = allDoctors.find(x=>x.id===pr.doctorId);
+      events.push({type:'Prescription', color:'#c0257a', date:pr.date,
+        title:`Prescribed by ${doc?('Dr. '+doc.name):'a doctor'}`,
+        detail:(pr.items||[]).map(i=>`${i.name} — ${i.dosage||''} (${i.frequency||''})`).join(', ')});
+    });
+    appsSnap.forEach(d=>{
+      const a = d.data();
+      events.push({type:'Program Application', color:'#e07b00', date:a.createdAt,
+        title:`Applied for Weight Reset Program (${a.status||'New'})`,
+        detail:(a.goals||[]).join(', ') || a.message || ''});
+    });
+    events.sort((a,b)=> (b.date?.toMillis?b.date.toMillis():0) - (a.date?.toMillis?a.date.toMillis():0));
+
+    $('custHistoryBody').innerHTML = events.length ? `<div style="display:flex;flex-direction:column;gap:10px;">
+      ${events.map(ev=>`
+        <div style="border-left:3px solid ${ev.color};padding:8px 12px;background:var(--bg);border-radius:8px;">
+          <div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;">
+            <span style="font-weight:700;font-size:12px;color:${ev.color};text-transform:uppercase;">${ev.type}</span>
+            <span style="font-size:11px;color:var(--muted);">${fmtDate(ev.date)}</span>
+          </div>
+          <div style="font-size:13.5px;margin-top:4px;">${escapeHtml(ev.title)}</div>
+          ${ev.detail ? `<div style="font-size:12px;color:var(--muted);margin-top:2px;">${escapeHtml(ev.detail)}</div>` : ''}
+        </div>`).join('')}
+      </div>` : `<div class="empty-state">No activity recorded for this customer yet.</div>`;
+  }catch(err){
+    $('custHistoryBody').innerHTML = `<div class="empty-state">Couldn't load history: ${escapeHtml(err.message)}</div>`;
+  }
 }
 
 /* --- DOCTORS --- */
