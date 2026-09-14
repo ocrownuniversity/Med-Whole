@@ -1919,15 +1919,31 @@ function openDoctorForm(id){
       <div class="form-group"><label>Specialty</label><input id="dfSpec" value="${escapeHtml(d.specialty||'')}"></div>
       <div class="form-group"><label>WhatsApp Number (for WhatsApp consultations, e.g. 08012345678)</label><input id="dfWhatsapp" value="${escapeHtml(d.whatsapp||'')}"></div>
       <div class="form-group"><label>Description</label><textarea id="dfDesc">${escapeHtml(d.description||'')}</textarea></div>
-      <div class="form-group"><label>Profile Image URL</label><input id="dfImg" value="${escapeHtml(d.imageUrl||'')}"></div>
+      <div class="form-group">
+        <label>Profile Image</label>
+        <img id="dfImgPreview" src="${escapeHtml(d.imageUrl||'https://placehold.co/150x150?text=Dr')}" style="width:120px;height:120px;object-fit:cover;border-radius:50%;margin-bottom:8px;display:block;" onerror="this.src='https://placehold.co/150x150?text=Dr'">
+        <input type="file" accept="image/*" id="dfImgFile">
+        <div id="dfImgStatus" style="font-size:11px;color:var(--muted);margin-top:4px;">Upload a photo from your device — no URL needed.</div>
+      </div>
       <div class="form-group"><label><input type="checkbox" id="dfActive" ${d.active!==false?'checked':''}> Active</label></div>
       <button class="btn btn-primary btn-block" type="submit">Save Doctor</button>
     </form></div>`;
   document.body.appendChild(overlay);
+  let dfImgData = d.imageUrl || '';
   overlay.addEventListener('click', e=>{ if(e.target===overlay || e.target.closest('[data-close]')) overlay.remove(); });
+  overlay.querySelector('#dfImgFile').addEventListener('change', e=>{
+    const file = e.target.files[0];
+    if(!file) return;
+    overlay.querySelector('#dfImgStatus').textContent = 'Processing image...';
+    compressImage(file, 500, 0.72, dataUrl=>{
+      dfImgData = dataUrl;
+      overlay.querySelector('#dfImgPreview').src = dataUrl;
+      overlay.querySelector('#dfImgStatus').textContent = 'Image ready \u2713';
+    });
+  });
   overlay.querySelector('#docForm').addEventListener('submit', async e=>{
     e.preventDefault();
-    const data = { name:$('dfName').value, specialty:$('dfSpec').value, whatsapp:$('dfWhatsapp').value.trim(), description:$('dfDesc').value, imageUrl:$('dfImg').value, active:$('dfActive').checked };
+    const data = { name:$('dfName').value, specialty:$('dfSpec').value, whatsapp:$('dfWhatsapp').value.trim(), description:$('dfDesc').value, imageUrl:dfImgData, active:$('dfActive').checked };
     try{
       if(id) await db.collection('doctors').doc(id).update(data);
       else await db.collection('doctors').add(data);
